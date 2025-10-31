@@ -4,7 +4,7 @@ import time
 
 from PySide6.QtCore import QObject, Signal
 
-from lolaudit.exceptions import SummonerInfoError, UnknownGameflowStateError
+from lolaudit.exceptions import UnknownGameflowStateError
 from lolaudit.lcu import LeagueClient
 from lolaudit.models import Gameflow
 
@@ -19,35 +19,9 @@ class GameflowManager(QObject):
         self.__client = client
         self.__main_flag = threading.Event()
 
-    def __wait_for_auth(self):
-        logger.info("等待授權...")
-        self.gameflow_change.emit(Gameflow.LOADING)
-        self.__client.refresh_auth()
-        while not self.__client.check_auth():
-            self.__client.refresh_auth()
-            time.sleep(3)
-        logger.info(f"授權成功\n  {self.__client.get_auth()}")
-
-    def __wait_for_sunmmoner_info(self):
-        logger.info(f"嘗試獲取召喚師狀態")
-        self.gameflow_change.emit(Gameflow.LOADING)
-        while True:
-            try:
-                self.__client.load_summoner_info()
-            except SummonerInfoError:
-                pass
-            except Exception as e:
-                logger.warning(f"無法獲取召喚師狀態: {e}")
-            else:
-                break
-            time.sleep(3)
-        logger.info(
-            f"召喚師狀態獲取成功\n  {self.__client.puuid}\n  {self.__client.gameName}#{self.__client.gameTag}"
-        )
-
     def __wait_for_init(self):
-        self.__wait_for_auth()
-        self.__wait_for_sunmmoner_info()
+        self.__client.wait_for_refresh_credentials()
+        self.__client.wait_for_load_summoner_info()
 
     def __main(self):
         self.__wait_for_init()

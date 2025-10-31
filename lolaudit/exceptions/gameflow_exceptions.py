@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 class GameflowError(Exception):
     pass
 

@@ -1,7 +1,10 @@
+import logging
 import re
 from typing import Optional
 
 import psutil
+
+logger = logging.getLogger(__name__)
 
 # Regex
 LCU_PORT_KEY = "--app-port="
@@ -11,7 +14,8 @@ TOKEN_REGEX = re.compile(r"--remoting-auth-token=(\S+)")
 LEAGUE_PROCESSES = {"LeagueClientUx.exe", "LeagueClientUx"}
 
 
-def get_auth_string() -> Optional[str]:
+def get_lcu_port_and_token() -> Optional[tuple[str, str]]:
+
     stdout = ""
     for proc in psutil.process_iter(["name", "cmdline"]):
         name, cmdline = proc.info["name"], proc.info["cmdline"]
@@ -32,8 +36,20 @@ def get_auth_string() -> Optional[str]:
     if not token:
         return None
 
-    return f"https://riot:{token}@127.0.0.1:{port}"
+    return port, token
+
+
+def wait_for_lcu_prot_and_token() -> tuple[str, str]:
+    import time
+
+    logger.info("等待授權...")
+    auth = get_lcu_port_and_token()
+    while auth is None:
+        time.sleep(1)
+        auth = get_lcu_port_and_token()
+    logger.info(f"授權成功\n  port: {auth[0]}\n  token: {auth[1]}")
+    return auth
 
 
 if __name__ == "__main__":
-    print(get_auth_string())
+    print(get_lcu_port_and_token())

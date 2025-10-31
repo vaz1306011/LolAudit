@@ -1,6 +1,5 @@
 import logging
 
-from appdirs import user_config_dir
 from PySide6.QtCore import QObject, QThread, Signal
 
 from lolaudit.config import ConfigKeys, ConfigManager
