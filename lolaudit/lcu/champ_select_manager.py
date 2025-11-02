@@ -1,18 +1,23 @@
+import logging
 import time
+
+from lolaudit.lcu.league_client import LeagueClient
+
+logger = logging.getLogger(__name__)
 
 
 class ChampSelectManager:
 
-    def __init__(self, client):
+    def __init__(self, client: LeagueClient):
         self.client = client
 
     def __get_champ_select_session(self):
-        url = "lol-champ-select/v1/session"
-        return self.client._get(url)
+        url = "/lol-champ-select/v1/session"
+        return self.client.requester.get(url)
 
     def __get_champ_select_timer(self) -> dict:
-        url = "lol-champ-select/v1/session/timer"
-        return self.client._get(url)
+        url = "/lol-champ-select/v1/session/timer"
+        return self.client.requester.get(url)
 
     def get_champ_select_remaining_time(self):
         response = self.__get_champ_select_timer()
