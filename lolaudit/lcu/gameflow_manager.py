@@ -1,9 +1,8 @@
 import logging
-import threading
-import time
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
+from stringcase import constcase
 
 from lolaudit.exceptions import UnknownGameflowStateError
 from lolaudit.models import Gameflow
@@ -23,96 +22,26 @@ class GameflowManager(QObject):
         super().__init__()
         self.__client = client
         self.__client.on_websocket_message.connect(self.__new_main)
-        self.__main_flag = threading.Event()
 
-    @Slot(str)
+    def __return_gameflow(self, gameflow: str) -> None:
+        logger.info(f"gameflow: {gameflow}")
+        gameflow = constcase(gameflow)
+        try:
+            self.on_gameflow_change.emit(Gameflow[gameflow])
+        except KeyError:
+            logger.warning(f"未知的gameflow狀態: {gameflow}")
+            self.on_gameflow_change.emit(Gameflow.UNKNOWN)
+
+    @Slot(str, str)
     @web_socket.subscribe("/lol-gameflow/v1/gameflow-phase")
     def __new_main(self, gameflow: str):
-        logger.info(f"gameflow: {gameflow}")
-        match gameflow:
-            case "None":
-                self.on_gameflow_change.emit(Gameflow.NONE)
-
-            case "Lobby":
-                self.on_gameflow_change.emit(Gameflow.LOBBY)
-
-            case "Matchmaking":
-                self.on_gameflow_change.emit(Gameflow.MATCHMAKING)
-
-            case "ReadyCheck":
-                self.on_gameflow_change.emit(Gameflow.READY_CHECK)
-
-            case "ChampSelect":
-                self.on_gameflow_change.emit(Gameflow.CHAMP_SELECT)
-
-            case "InProgress":
-                self.on_gameflow_change.emit(Gameflow.IN_PROGRESS)
-
-            case "Reconnect":
-                self.on_gameflow_change.emit(Gameflow.RECONNECT)
-
-            case "PreEndOfGame":
-                self.on_gameflow_change.emit(Gameflow.PRE_END_OF_GAME)
-
-            case "EndOfGame":
-                self.on_gameflow_change.emit(Gameflow.END_OF_GAME)
-
-            case _:
-                raise UnknownGameflowStateError(gameflow)
-
-    def __main(self):
-        while not self.__main_flag.is_set():
-            gameflow = self.__client.get_gameflow()
-            try:
-                logger.info(f"gameflow: {gameflow}")
-                match gameflow:
-                    case None:
-                        self.on_gameflow_change.emit(Gameflow.LOADING)
-                        self.__client.wait_for_connect()
-
-                    case "None":
-                        self.on_gameflow_change.emit(Gameflow.NONE)
-
-                    case "Lobby":
-                        self.on_gameflow_change.emit(Gameflow.LOBBY)
-
-                    case "Matchmaking":
-                        self.on_gameflow_change.emit(Gameflow.MATCHMAKING)
-
-                    case "ReadyCheck":
-                        self.on_gameflow_change.emit(Gameflow.READY_CHECK)
-
-                    case "ChampSelect":
-                        self.on_gameflow_change.emit(Gameflow.CHAMP_SELECT)
-
-                    case "InProgress":
-                        self.on_gameflow_change.emit(Gameflow.IN_PROGRESS)
-
-                    case "Reconnect":
-                        self.on_gameflow_change.emit(Gameflow.RECONNECT)
-
-                    case "PreEndOfGame":
-                        self.on_gameflow_change.emit(Gameflow.PRE_END_OF_GAME)
-
-                    case "EndOfGame":
-                        self.on_gameflow_change.emit(Gameflow.END_OF_GAME)
-
-                    case _:
-                        raise UnknownGameflowStateError(gameflow)
-            except Exception as e:
-                logger.error(f"{e}")
-                self.on_gameflow_change.emit(Gameflow.UNKNOWN)
-
-            time.sleep(0.5)
-        else:
-            logger.info("停止程序")
+        self.__return_gameflow(gameflow)
 
     def start(self):
-        self.__client.subscribe("/lol-gameflow/v1/gameflow-phase")
-        # self.__main_flag.clear()
-        # main_thread = threading.Thread(target=self.__main)
-        # main_thread.daemon = True
-        # main_thread.start()
-
-    def stop(self) -> None:
-        self.__main_flag.set()
+        url = "/lol-gameflow/v1/gameflow-phase"
+        self.__client.subscribe(url)
+        response = self.__client.get(url)
+        if isinstance(response, str):
+            self.__return_gameflow(response)
+        else:
+            raise UnknownGameflowStateError(str(response))

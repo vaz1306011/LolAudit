@@ -10,6 +10,7 @@ psutil = "*"
 pyside6 = "*"
 appdirs = "*"
 pydantic = "*"
+stringcase = "*"
 
 [dev-packages]
 ipykernel = "*"

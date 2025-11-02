@@ -135,6 +135,6 @@ class MainController(QObject):
             logger.warning("主控制器工作線程未啟動")
             return
 
-        self.__gameflow_manager.stop()
+        self.__client.stop_websocket()
         self.__work_thread.quit()
         self.__work_thread.wait()
