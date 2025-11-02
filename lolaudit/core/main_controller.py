@@ -1,10 +1,9 @@
 import logging
 
-from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 
 from lolaudit.config import ConfigKeys, ConfigManager
-from lolaudit.core import GameflowManager
-from lolaudit.lcu import ChampSelectManager, LeagueClient, MatchManager
+from lolaudit.lcu import ChampSelectManager, GameflowManager, LeagueClient, MatchManager
 from lolaudit.models import Gameflow, MatchmakingState
 
 logger = logging.getLogger(__name__)
@@ -17,16 +16,15 @@ class MainController(QObject):
         super().__init__()
         self.config = ConfigManager()
         self.__client = LeagueClient()
+        self.__client.wait_for_refresh_port_and_token()
+        self.__client.wait_for_load_summoner_info()
         self.__gameflow_manager = GameflowManager(self.__client)
-        self.__gameflow_manager.gameflow_change.connect(self.__on_gameflow_change)
+        self.__gameflow_manager.on_gameflow_change.connect(self.__on_gameflow_change)
         self.__match_manager = MatchManager(self.__client)
         self.__champ_select_manager = ChampSelectManager(self.__client)
+        self.__work_thread = None
 
-        self.__work_thread = QThread()
-        self.moveToThread(self.__work_thread)
-        self.__work_thread.started.connect(self.__gameflow_manager.start_main)
-        self.__work_thread.start()
-
+    @Slot(Gameflow)
     def __on_gameflow_change(self, gameflow: Gameflow):
         display_text = None
         match gameflow:
@@ -120,7 +118,24 @@ class MainController(QObject):
         self.__match_manager.set_auto_rematch(value)
         self.config.set_config(ConfigKeys.AUTO_REMATCH, value)
 
+    def start(self):
+        logger.info("啟動主控制器工作線程")
+        if self.__work_thread:
+            logger.warning("主控制器工作線程已啟動，無法重複啟動")
+            return
+
+        self.__work_thread = QThread()
+        self.moveToThread(self.__work_thread)
+        self.__work_thread.started.connect(self.__gameflow_manager.start)
+        self.__work_thread.start()
+        logger.info("主控制器工作線程啟動完成")
+
     def stop(self):
-        self.__gameflow_manager.stop_main()
+        pass
+        if not self.__work_thread:
+            logger.warning("主控制器工作線程未啟動")
+            return
+
+        self.__gameflow_manager.stop()
         self.__work_thread.quit()
         self.__work_thread.wait()

@@ -1,7 +1,7 @@
 import logging
 import platform
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QUrl, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
@@ -30,6 +30,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("初始化主控制器")
         self.__main_controller = MainController()
         self.__main_controller.ui_update.connect(self.__on_ui_update)
+        self.__main_controller.start()
         logger.info("主控制器初始化完成")
 
         self.__init_ui()
@@ -76,6 +77,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.tray.quit_action.triggered.connect(self.__exit_app)
         self.tray.show()
 
+    @Slot(Gameflow, str)
     def __on_ui_update(self, gameflow: Gameflow, text: str):
         self.gameflow = gameflow
         self.label.setText(text)
