@@ -1,23 +1,25 @@
 import logging
 import time
+from typing import TYPE_CHECKING
 
-from lolaudit.lcu.league_client import LeagueClient
+if TYPE_CHECKING:
+    from . import LeagueClient
 
 logger = logging.getLogger(__name__)
 
 
 class ChampSelectManager:
 
-    def __init__(self, client: LeagueClient):
+    def __init__(self, client: "LeagueClient"):
         self.client = client
 
     def __get_champ_select_session(self):
         url = "/lol-champ-select/v1/session"
-        return self.client.requester.get(url)
+        return self.client.get(url)
 
     def __get_champ_select_timer(self) -> dict:
         url = "/lol-champ-select/v1/session/timer"
-        return self.client.requester.get(url)
+        return self.client.get(url)
 
     def get_champ_select_remaining_time(self):
         response = self.__get_champ_select_timer()

@@ -5,9 +5,8 @@ from PySide6.QtCore import Qt, QUrl, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
-from lolaudit.config import ConfigKeys
 from lolaudit.core import MainController
-from lolaudit.models import Gameflow
+from lolaudit.models import ConfigKeys, Gameflow
 from lolaudit.ui import Tray, Ui_MainWindow
 from lolaudit.utils import check_update, resource_path
 

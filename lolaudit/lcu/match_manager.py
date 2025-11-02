@@ -1,4 +1,5 @@
 import logging
+from pprint import pprint
 
 from PySide6.QtCore import QObject, Signal
 
@@ -26,11 +27,15 @@ class MatchManager(QObject):
         self.__auto_start_match = True
 
     def in_lobby(self) -> int:
-        mchmking_info: dict = self.__client.get_matchmaking_info()
+        mchmking_info: dict = self.get_matchmaking_info()
         search_state = mchmking_info.get("searchState")
         match search_state:
             case None:
                 return 0
+            case "Searching":
+                logger.info("search_state: Searching")
+                pprint(mchmking_info)
+                raise UnknownSearchStateError(search_state)
             case "Error":
                 try:
                     if not mchmking_info["errors"]:
@@ -51,7 +56,7 @@ class MatchManager(QObject):
                 raise UnknownSearchStateError(search_state)
 
     def in_matchmaking(self) -> dict:
-        mchmking_info: dict = self.__client.get_matchmaking_info()
+        mchmking_info: dict = self.get_matchmaking_info()
         search_state = mchmking_info.get("searchState")
         logger.info(f"search_state: {search_state}")
         match search_state:
@@ -67,10 +72,10 @@ class MatchManager(QObject):
                     logger.info("等待時間過長")
 
                     logger.info("退出列隊")
-                    self.__client.quit_matchmaking()
+                    self.stop_matchmaking()
 
                     logger.info("重新列隊")
-                    self.__client.start_matchmaking()
+                    self.start_matchmaking()
 
                 return {"timeInQueue": time_in_queue, "estimatedTime": estimated_time}
 
@@ -78,27 +83,27 @@ class MatchManager(QObject):
                 raise UnknownSearchStateError(search_state)
 
     def in_ready_check(self) -> tuple[MatchmakingState, dict]:
-        mchmking_info: dict = self.__client.get_matchmaking_info()
+        mchmking_info: dict = self.get_matchmaking_info()
         playerResponse = mchmking_info.get("readyCheck", {}).get("playerResponse")
         match playerResponse:
             case "None":
                 if not self.__auto_accept:
                     return MatchmakingState.NONE, {}
 
-                ready_check_data = self.__client.get_matchmaking_info()["readyCheck"]
+                ready_check_data = self.get_matchmaking_info()["readyCheck"]
                 if ready_check_data["state"] != "InProgress":
                     return MatchmakingState.NONE, {}
                 pass_time = round(ready_check_data["timer"])
 
                 def is_playerResponsed() -> bool:
-                    mchmking_info: dict = self.__client.get_matchmaking_info()
+                    mchmking_info: dict = self.get_matchmaking_info()
                     playerResponse = mchmking_info.get("readyCheck", {}).get(
                         "playerResponse"
                     )
                     return playerResponse in ("Accepted", "Declined")
 
                 if not is_playerResponsed() and pass_time >= self.__accept_delay:
-                    self.__client.accept_match()
+                    self.accept_match()
                     return (MatchmakingState.ACCEPTED, {})
 
                 return (
@@ -114,12 +119,6 @@ class MatchManager(QObject):
 
             case _:
                 raise UnknownPlayerResponseError(playerResponse)
-
-    def start_matchmaking(self) -> None:
-        self.__client.start_matchmaking()
-
-    def stop_matchmaking(self) -> None:
-        self.__client.quit_matchmaking()
 
     def get_accept_delay(self) -> int:
         return self.__accept_delay
@@ -138,3 +137,23 @@ class MatchManager(QObject):
 
     def set_auto_rematch(self, status: bool) -> None:
         self.__auto_rematch = status
+
+    def get_matchmaking_info(self) -> dict:
+        url = "/lol-matchmaking/v1/search"
+        return self.__client.get(url)
+
+    def start_matchmaking(self) -> None:
+        url = "/lol-lobby/v2/lobby/matchmaking/search"
+        self.__client.post(url)
+
+    def stop_matchmaking(self) -> None:
+        url = "/lol-lobby/v2/lobby/matchmaking/search"
+        self.__client.delete(url)
+
+    def accept_match(self) -> None:
+        url = "/lol-matchmaking/v1/ready-check/accept"
+        self.__client.post(url)
+
+    def decline_match(self) -> None:
+        url = "/lol-matchmaking/v1/ready-check/decline"
+        self.__client.post(url)

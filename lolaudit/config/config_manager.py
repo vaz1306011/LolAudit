@@ -5,9 +5,7 @@ from pathlib import Path
 from appdirs import user_config_dir
 from PySide6.QtCore import QObject
 
-from lolaudit.models import Config
-
-from . import ConfigKeys
+from lolaudit.models import Config, ConfigKeys
 
 logger = logging.getLogger(__name__)
 

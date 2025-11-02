@@ -2,9 +2,9 @@ import logging
 
 from PySide6.QtCore import QObject, QThread, Signal, Slot
 
-from lolaudit.config import ConfigKeys, ConfigManager
+from lolaudit.config import ConfigManager
 from lolaudit.lcu import ChampSelectManager, GameflowManager, LeagueClient, MatchManager
-from lolaudit.models import Gameflow, MatchmakingState
+from lolaudit.models import ConfigKeys, Gameflow, MatchmakingState
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +16,7 @@ class MainController(QObject):
         super().__init__()
         self.config = ConfigManager()
         self.__client = LeagueClient()
-        self.__client.wait_for_refresh_port_and_token()
-        self.__client.wait_for_load_summoner_info()
+        self.__client.wait_for_connect()
         self.__gameflow_manager = GameflowManager(self.__client)
         self.__gameflow_manager.on_gameflow_change.connect(self.__on_gameflow_change)
         self.__match_manager = MatchManager(self.__client)

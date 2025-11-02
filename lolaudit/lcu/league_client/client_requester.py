@@ -1,22 +1,36 @@
 import logging
-from typing import Optional
 
 import requests
-
-from lolaudit.lcu import wait_for_lcu_prot_and_token
 
 logger = logging.getLogger(__name__)
 
 
-class Requester:
+class ClientRequester:
     def __init__(self) -> None:
         super().__init__()
-        self.port = None
-        self.token = None
+        self.__port: str
+        self.__token: str
         self.__session = requests.Session()
         self.__session.verify = False
         self.__session.auth = None
         self.__session.headers.update({"Accept": "application/json"})
+
+    @property
+    def port(self) -> str:
+        return self.__port
+
+    @port.setter
+    def port(self, value: str) -> None:
+        self.__port = value
+
+    @property
+    def token(self) -> str:
+        return self.__token
+
+    @token.setter
+    def token(self, value: str) -> None:
+        self.__token = value
+        self.__session.auth = ("riot", self.__token)
 
     def get(self, url: str) -> dict:
         try:
@@ -40,10 +54,3 @@ class Requester:
             self.__session.delete(url, timeout=(3, 10))
         except requests.exceptions.ConnectionError:
             logger.warning(f"delete request失敗: {url}")
-
-    def get_port_and_token(self) -> tuple[Optional[str], Optional[str]]:
-        return self.port, self.token
-
-    def wait_for_refresh_port_and_token(self) -> None:
-        self.port, self.token = wait_for_lcu_prot_and_token()
-        self.__session.auth = ("riot", self.token)
