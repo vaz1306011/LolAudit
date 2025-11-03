@@ -10,7 +10,7 @@ class TraceStyleFormatter(logging.Formatter):
         header = f"{level} - {time}:"
         message = record.getMessage()
 
-        if record.levelno >= logging.ERROR:
+        if record.levelno >= logging.ERROR or record.levelno == logging.DEBUG:
             stack = "".join(traceback.format_stack()[:-1])
             return f"{header}\n{stack}    {message}\n"
         else:
@@ -18,12 +18,17 @@ class TraceStyleFormatter(logging.Formatter):
             return f"{header} {location}\n  {message}\n"
 
 
-def setup_logging():
+def setup_logging(level: int = logging.INFO) -> None:
     formatter = TraceStyleFormatter()
 
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.WARNING)
     root_logger.addHandler(handler)
+
+    logger = logging.getLogger("lolaudit")
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    logger.propagate = False
