@@ -1,6 +1,5 @@
 import logging
 import time
-from pprint import pformat
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
@@ -23,7 +22,7 @@ class ChampSelectManager(QObject):
         self.__client = client
         self.__client.websocket_on_message.connect(self.__emit_champ_select_change)
         self.__session: dict
-        self.timer = QTimer(self)
+        self.__timer = None
 
     def __get_champ_select_session(self):
         url = "/lol-champ-select/v1/session"
@@ -42,12 +41,14 @@ class ChampSelectManager(QObject):
         self.remaining_time_change.emit(remaining_time)
 
     def start(self) -> None:
-        logger.info("啟動Champ Select管理器")
         url = "/lol-champ-select/v1/session"
         self.__client.subscribe(url)
         self.__session = self.__get_champ_select_session()
-        self.timer.timeout.connect(self.__emit_champ_select_remaining_time)
-        self.timer.start(250)
+
+        self.__timer = QTimer()
+        self.__timer.setInterval(250)
+        self.__timer.timeout.connect(self.__emit_champ_select_remaining_time)
+        self.__timer.start()
 
     def get_champ_select_actions(self) -> list:
         """
@@ -60,5 +61,6 @@ class ChampSelectManager(QObject):
     def stop(self) -> None:
         url = "/lol-champ-select/v1/session"
         self.__client.unsubscribe(url)
-        self.timer.stop()
+        if self.__timer:
+            self.__timer.stop()
         self.end.emit()

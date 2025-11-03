@@ -1,7 +1,7 @@
 import logging
 import platform
 
-from PySide6.QtCore import Qt, QUrl, Slot
+from PySide6.QtCore import Qt, QThread, QUrl, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 class LolAuditUi(QMainWindow, Ui_MainWindow):
     def __init__(self, version):
         super().__init__()
+        self.version = version
         self.setupUi(self)
-        self.setWindowTitle(f"LOL Audit {version}")
+        self.setWindowTitle(f"LOL Audit {self.version}")
         icon_path = (
             "./lol_audit.icns" if platform.system() == "Darwin" else "./lol_audit.ico"
         )
@@ -26,20 +27,13 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
-        logger.info("初始化主控制器")
+        logger.info("開始初始化主控制器")
         self.__main_controller = MainController()
         self.__main_controller.ui_update.connect(self.__on_ui_update)
         logger.info("主控制器初始化完成")
 
-        self.__init_ui()
-        logger.info("UI 初始化完成")
-
-        self.__check_update(version)
-
-        self.__main_controller.start()
-        self.gameflow: Gameflow
-
     def __init_ui(self):
+        logger.info("開始初始化UI")
         cfg = self.__main_controller.config
         self.accept_delay_value.setText(str(cfg.get_config(ConfigKeys.ACCEPT_DELAY)))
         self.accept_delay_value.textChanged.connect(
@@ -75,6 +69,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.tray = Tray(self, self.__icon)
         self.tray.quit_action.triggered.connect(self.__exit_app)
         self.tray.show()
+        logger.info("UI 初始化完成")
 
     @Slot(str)
     def __on_ui_update(self, text: str):
@@ -130,9 +125,21 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
             QDesktopServices.openUrl(QUrl(url))
 
     def __exit_app(self):
-        self.__main_controller.stop()
+        self.__thread.quit()
         QApplication.quit()
 
     def closeEvent(self, event):
         event.ignore()
         self.hide()
+
+    def start(self):
+        self.__init_ui()
+        self.__check_update(self.version)
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+        self.__thread = QThread()
+        self.__main_controller.moveToThread(self.__thread)
+        self.__thread.started.connect(self.__main_controller.start)
+        self.__thread.start()

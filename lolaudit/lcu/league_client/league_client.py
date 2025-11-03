@@ -1,11 +1,10 @@
 import logging
 from typing import Optional
 
-import requests
 import urllib3
 
 from lolaudit.exceptions import SummonerInfoError
-from lolaudit.lcu.auth import wait_for_lcu_prot_and_token
+from lolaudit.lcu.auth import wait_for_lcu_port_and_token
 from lolaudit.models import SummonerInfo
 
 from .client_requester import ClientRequester
@@ -18,19 +17,14 @@ logger = logging.getLogger(__name__)
 class LeagueClient(ClientRequester, ClientWebSocket):
     def __init__(self):
         super().__init__()
-        self.token: str
-        self.port: str
+        self.token: Optional[str] = None
+        self.port: Optional[str] = None
         self.summoner_info: SummonerInfo
 
-    def check_connection(self) -> bool:
+    def is_connection(self) -> bool:
         if self.get("/lol-summoner/v1/current-summoner"):
             return True
         return False
-
-    def wait_for_connect(self) -> None:
-        self.port, self.token = wait_for_lcu_prot_and_token()
-        self.start_websocket()
-        self.wait_for_load_summoner_info()
 
     def load_summoner_info(self) -> None:
         me = self.get("/lol-summoner/v1/current-summoner")
@@ -53,3 +47,10 @@ class LeagueClient(ClientRequester, ClientWebSocket):
         logger.info(
             f"獲取召喚師狀態成功\n  puuid: {self.summoner_info.puuid}\n  gameName: {self.summoner_info.gameName}#{self.summoner_info.tagLine}"
         )
+
+    def start(self) -> None:
+        self.port, self.token = wait_for_lcu_port_and_token()
+        self.start_websocket()
+
+    def stop(self) -> None:
+        self.stop_websocket()

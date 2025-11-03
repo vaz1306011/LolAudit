@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 from lolaudit import LolAuditUi, __version__, setup_logging
 
-setup_logging(logging.DEBUG)
+setup_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -23,6 +23,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     lol_audit_ui = LolAuditUi(__version__)
-    lol_audit_ui.show()
+    lol_audit_ui.start()
 
     sys.exit(app.exec())

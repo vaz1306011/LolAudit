@@ -39,7 +39,7 @@ def get_lcu_port_and_token() -> Optional[tuple[str, str]]:
     return port, token
 
 
-def wait_for_lcu_prot_and_token() -> tuple[str, str]:
+def wait_for_lcu_port_and_token() -> tuple[str, str]:
     import time
 
     logger.info("等待授權...")

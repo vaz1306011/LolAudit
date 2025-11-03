@@ -1,5 +1,5 @@
 import logging
-from pprint import pformat, pprint
+from pprint import pformat
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -113,14 +113,14 @@ class MatchManager(QObject):
                     return
                 pass_time = round(ready_check_data["timer"])
 
-                def is_playerResponsed() -> bool:
+                def __is_playerResponsed() -> bool:
                     mchmking_info: dict = self.get_matchmaking_info()
                     playerResponse = mchmking_info.get("readyCheck", {}).get(
                         "playerResponse"
                     )
                     return playerResponse in ("Accepted", "Declined")
 
-                if not is_playerResponsed() and pass_time >= self.__accept_delay:
+                if not __is_playerResponsed() and pass_time >= self.__accept_delay:
                     self.accept_match()
                     self.matchmaking_change.emit(MatchmakingState.ACCEPTED, None)
                     return

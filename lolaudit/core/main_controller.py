@@ -15,11 +15,18 @@ class MainController(QObject):
     def __init__(self):
         super().__init__()
         self.config = ConfigManager()
+
         self.__client = LeagueClient()
+        self.__client.websocket_on_open.connect(self.__on_websocket_open)
+        self.__client.websocket_on_close.connect(self.__on_websocket_close)
+
         self.__gameflow_manager = GameflowManager(self.__client)
         self.__gameflow_manager.gameflow_change.connect(self.__on_gameflow_change)
+        self.__gameflow = None
+
         self.__match_manager = MatchManager(self.__client)
         self.__match_manager.matchmaking_change.connect(self.__on_matchmaking_change)
+
         self.__champ_select_manager = ChampSelectManager(self.__client)
         self.__champ_select_manager.remaining_time_change.connect(
             self.__on_champ_select_remaining_time_change
@@ -42,18 +49,21 @@ class MainController(QObject):
         if self._gameflow_handle:
             return
         self._gameflow_handle = True
+
         logger.info(f"Gameflow變更為: {gameflow}")
         self.gameflow = gameflow
-        match gameflow:
-            case Gameflow.LOBBY | Gameflow.MATCHMAKING | Gameflow.READY_CHECK:
-                self.__match_manager.start()
-            case _:
-                self.__match_manager.stop()
-        match gameflow:
-            case Gameflow.CHAMP_SELECT:
-                self.__champ_select_manager.start()
-            case _:
-                self.__champ_select_manager.stop()
+        if self.__client.is_connection():
+            match gameflow:
+                case Gameflow.LOBBY | Gameflow.MATCHMAKING | Gameflow.READY_CHECK:
+                    self.__match_manager.start()
+                case _:
+                    self.__match_manager.stop()
+            match gameflow:
+                case Gameflow.CHAMP_SELECT:
+                    self.__champ_select_manager.start()
+                case _:
+                    self.__champ_select_manager.stop()
+
         self._gameflow_handle = False
 
         display_text = None
@@ -139,6 +149,13 @@ class MainController(QObject):
     def __on_champ_select_end(self):
         self.__refresh_gameflow()
 
+    def __on_websocket_open(self):
+        self.__client.wait_for_load_summoner_info()
+        self.__gameflow_manager.start()
+
+    def __on_websocket_close(self):
+        self.start()
+
     def start_matchmaking(self):
         self.__match_manager.start_matchmaking()
 
@@ -158,9 +175,5 @@ class MainController(QObject):
         self.config.set_config(ConfigKeys.AUTO_REMATCH, value)
 
     def start(self):
-        self.__client.wait_for_connect()
-        self.__gameflow_manager.start()
-        self.__refresh_gameflow()
-
-    def stop(self):
-        self.__client.stop_websocket()
+        self.__on_gameflow_change(Gameflow.LOADING)
+        self.__client.start()

@@ -2,8 +2,8 @@ import base64
 import json
 import logging
 import ssl
-import threading
-from typing import Optional
+import time
+from threading import Thread
 
 import websocket
 from PySide6.QtCore import QObject, Signal
@@ -22,9 +22,9 @@ class ClientWebSocket(QObject):
         super().__init__()
         self.port: str
         self.token: str
-        self.ws = None
-        self.subscribed = set()
-        self.main_thread = None
+        self.__ws = None
+        self.__subscribed = set()
+        self.__running = False
 
     def __on_open(self, ws):
         logger.info("WebSocket連接已開啟")
@@ -42,69 +42,72 @@ class ClientWebSocket(QObject):
             logger.warning(f"解析錯誤: {e}")
 
     def __on_close(self, ws, close_status_code, close_msg):
-        logger.info(f"WebSocket連接已關閉: {close_status_code} - {close_msg}")
+        logger.info(f"WebSocket連接已關閉")
+        self.__running = False
+        self.__subscribed.clear()
+        self.__ws = None
         self.websocket_on_close.emit()
-        self.ws: Optional[websocket.WebSocketApp]
 
     def start_websocket(self):
-        if self.ws:
-            logger.warning("WebSocket已啟動，無需重複啟動")
-            return
-        if not self.port or not self.token:
-            logger.error("無法啟動WebSocket，缺少port或token")
+        if self.__running or self.__ws:
+            logger.warning("WebSocket已在運行中，無法重複啟動")
             return
 
-        url = f"wss://127.0.0.1:{self.port}/"
-        auth_str = base64.b64encode(f"riot:{self.token}".encode()).decode()
-        header = [f"Authorization: Basic {auth_str}"]
+        def __run():
+            self.__running = True
+            while self.__running:
+                try:
+                    if not self.port or not self.token:
+                        logger.error("無法啟動WebSocket，缺少port或token")
+                        raise ValueError("缺少port或token")
+                    url = f"wss://127.0.0.1:{self.port}/"
+                    auth_str = base64.b64encode(f"riot:{self.token}".encode()).decode()
+                    header = [f"Authorization: Basic {auth_str}"]
+                    self.__ws = websocket.WebSocketApp(
+                        url,
+                        header=header,
+                        on_open=self.__on_open,
+                        on_message=self.__on_message,
+                        on_close=self.__on_close,
+                    )
+                    self.__ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+                except Exception as e:
+                    logger.warning(f"WebSocket連接錯誤: {e}")
 
-        def run():
-            self.ws = websocket.WebSocketApp(
-                url,
-                header=header,
-                on_open=self.__on_open,
-                on_message=self.__on_message,
-                on_close=self.__on_close,
-            )
-            self.ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+                if self.__running:
+                    logger.info("WebSocket嘗試重新連接中...")
+                    time.sleep(3)
 
-        self.main_thread = threading.Thread(target=run, daemon=True)
-        self.main_thread.start()
+        Thread(target=__run, daemon=True).start()
 
     def subscribe(self, url: str):
-
-        if not self.ws:
+        if not self.__ws:
             logger.warning("WebSocket未連接，無法訂閱頻道")
             return
-        if url in self.subscribed:
-            logger.debug(f"頻道已訂閱: {url}")
+        if url in self.__subscribed:
             return
         url = web_socket.format_url(url)
         subscribe_msg = [5, url]
-        self.ws.send(json.dumps(subscribe_msg))
-        self.subscribed.add(url)
-        logger.debug(f"已訂閱頻道: {url}")
+        self.__ws.send(json.dumps(subscribe_msg))
+        self.__subscribed.add(url)
 
         self._handle = False
 
     def unsubscribe(self, url: str):
-        if not self.ws:
-            logger.warning("WebSocket未連接，無法取消訂閱頻道")
+        if not self.__ws:
+            logger.warning(f"WebSocket未連接，無法取消訂閱頻道\n{url}")
             return
-        if url not in self.subscribed:
-            logger.debug(f"頻道未訂閱: {url}")
+        if url not in self.__subscribed:
             return
-        self.subscribed.remove(url)
+        self.__subscribed.remove(url)
         url = web_socket.format_url(url)
         unsubscribe_msg = [6, url]
-        self.ws.send(json.dumps(unsubscribe_msg))
-        logger.debug(f"已取消訂閱頻道: {url}")
+        self.__ws.send(json.dumps(unsubscribe_msg))
 
     def stop_websocket(self):
-        if not self.ws:
+        if not self.__ws:
             logger.warning("WebSocket未連接，無法停止")
             return
 
-        self.ws.close()
-        self.subscribed.clear()
-        self.ws = None
+        self.__ws.close()
+        self.__subscribed.clear()

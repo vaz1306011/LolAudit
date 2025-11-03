@@ -36,6 +36,7 @@ class GameflowManager(QObject):
     def start(self):
         url = "/lol-gameflow/v1/gameflow-phase"
         self.__client.subscribe(url)
+        self.gameflow_change.emit(self.get_gameflow())
 
     def get_gameflow(self) -> Gameflow:
         """
@@ -46,6 +47,8 @@ class GameflowManager(QObject):
         try:
             url = "/lol-gameflow/v1/gameflow-phase"
             gameflow = self.__client.get(url)
+            if not gameflow:
+                return Gameflow.LOADING
             gameflow = constcase(gameflow)
             return Gameflow[gameflow]
         except KeyError:

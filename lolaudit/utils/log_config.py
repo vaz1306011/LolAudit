@@ -12,10 +12,14 @@ class TraceStyleFormatter(logging.Formatter):
 
         if record.levelno >= logging.ERROR or record.levelno == logging.DEBUG:
             stack = "".join(traceback.format_stack()[:-1])
-            return f"{header}\n{stack}    {message}\n"
+            return f"{header}\n{stack}\n{message}\n"
         else:
             location = f"{record.pathname}:{record.lineno}"
-            return f"{header} {location}\n  {message}\n"
+            return f"{header}\n{self.__add_space(location, 2)}\n{self.__add_space(message, 4)}\n"
+
+    def __add_space(self, text: str, num_spaces: int) -> str:
+        spaces = " " * num_spaces
+        return "\n".join(spaces + line for line in text.splitlines())
 
 
 def setup_logging(level: int = logging.INFO) -> None:
@@ -32,3 +36,7 @@ def setup_logging(level: int = logging.INFO) -> None:
     logger.setLevel(level)
     logger.addHandler(handler)
     logger.propagate = False
+
+    web_socket_logger = logging.getLogger("websocket")
+    web_socket_logger.setLevel(logging.CRITICAL)
+    web_socket_logger.propagate = False
