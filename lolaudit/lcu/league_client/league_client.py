@@ -53,19 +53,3 @@ class LeagueClient(ClientRequester, ClientWebSocket):
         logger.info(
             f"獲取召喚師狀態成功\n  puuid: {self.summoner_info.puuid}\n  gameName: {self.summoner_info.gameName}#{self.summoner_info.tagLine}"
         )
-
-    def get_gameflow(self) -> Optional[str]:
-        """
-        gameflow_list = ['"None"'      , '"Lobby"'       , '"Matchmaking"',
-                         '"ReadyCheck"', '"ChampSelect"' , '"InProgress"' ,
-                         '"Reconnect"' , '"PreEndOfGame"', '"EndOfGame"' ,]
-        """
-        try:
-            url = "/lol-gameflow/v1/gameflow-phase"
-            response = self.get(url)
-            if not response:
-                return None
-            return str(response)
-        except requests.exceptions.MissingSchema:
-            logger.warning("無法獲取遊戲流程")
-            return None

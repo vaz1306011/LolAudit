@@ -21,10 +21,11 @@ class GameflowManager(QObject):
     def __init__(self, client: "LeagueClient"):
         super().__init__()
         self.__client = client
-        self.__client.websocket_message.connect(self.__on_websocket_message)
+        self.__client.websocket_on_message.connect(self.__on_websocket_on_message)
 
-    def __emit_gameflow_change(self, gameflow: str) -> None:
-        logger.info(f"gameflow: {gameflow}")
+    @web_socket.subscribe("/lol-gameflow/v1/gameflow-phase")
+    @Slot(str)
+    def __on_websocket_on_message(self, gameflow: str):
         gameflow = constcase(gameflow)
         try:
             self.gameflow_change.emit(Gameflow[gameflow])
@@ -32,16 +33,20 @@ class GameflowManager(QObject):
             logger.warning(f"未知的gameflow狀態: {gameflow}")
             self.gameflow_change.emit(Gameflow.UNKNOWN)
 
-    @Slot(str, str)
-    @web_socket.subscribe("/lol-gameflow/v1/gameflow-phase")
-    def __on_websocket_message(self, gameflow: str):
-        self.__emit_gameflow_change(gameflow)
-
     def start(self):
         url = "/lol-gameflow/v1/gameflow-phase"
         self.__client.subscribe(url)
-        response = self.__client.get(url)
-        if isinstance(response, str):
-            self.__emit_gameflow_change(response)
-        else:
-            raise UnknownGameflowStateError(str(response))
+
+    def get_gameflow(self) -> Gameflow:
+        """
+        gameflow_list = ['"None"'      , '"Lobby"'       , '"Matchmaking"',
+                         '"ReadyCheck"', '"ChampSelect"' , '"InProgress"' ,
+                         '"Reconnect"' , '"PreEndOfGame"', '"EndOfGame"' ,]
+        """
+        try:
+            url = "/lol-gameflow/v1/gameflow-phase"
+            gameflow = self.__client.get(url)
+            gameflow = constcase(gameflow)
+            return Gameflow[gameflow]
+        except KeyError:
+            raise UnknownGameflowStateError(f"未知的gameflow狀態: {gameflow}")

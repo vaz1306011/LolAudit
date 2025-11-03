@@ -29,7 +29,6 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("初始化主控制器")
         self.__main_controller = MainController()
         self.__main_controller.ui_update.connect(self.__on_ui_update)
-        self.__main_controller.start()
         logger.info("主控制器初始化完成")
 
         self.__init_ui()
@@ -37,6 +36,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
 
         self.__check_update(version)
 
+        self.__main_controller.start()
         self.gameflow: Gameflow
 
     def __init_ui(self):
@@ -76,12 +76,11 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.tray.quit_action.triggered.connect(self.__exit_app)
         self.tray.show()
 
-    @Slot(Gameflow, str)
-    def __on_ui_update(self, gameflow: Gameflow, text: str):
-        self.gameflow = gameflow
+    @Slot(str)
+    def __on_ui_update(self, text: str):
         self.label.setText(text)
 
-        match gameflow:
+        match self.__main_controller.gameflow:
             case Gameflow.LOBBY:
                 self.match_button.setText("開始列隊")
                 self.match_button.setDisabled(False)
@@ -97,7 +96,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
                 self.match_button.hide()
 
     def __on_match_button_click(self):
-        if self.gameflow == Gameflow.LOBBY:
+        if self.__main_controller.gameflow == Gameflow.LOBBY:
             self.__main_controller.start_matchmaking()
         else:
             self.__main_controller.stop_matchmaking()
