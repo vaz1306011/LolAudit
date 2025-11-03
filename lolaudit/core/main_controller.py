@@ -18,7 +18,7 @@ class MainController(QObject):
         self.__client = LeagueClient()
         self.__client.wait_for_connect()
         self.__gameflow_manager = GameflowManager(self.__client)
-        self.__gameflow_manager.on_gameflow_change.connect(self.__on_gameflow_change)
+        self.__gameflow_manager.gameflow_change.connect(self.__on_gameflow_change)
         self.__match_manager = MatchManager(self.__client)
         self.__champ_select_manager = ChampSelectManager(self.__client)
         self.__work_thread = None

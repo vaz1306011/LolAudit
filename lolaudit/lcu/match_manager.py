@@ -1,7 +1,7 @@
 import logging
 from pprint import pprint
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject
 
 from lolaudit.exceptions import (
     UnknownMatchmakingInfoError,
@@ -9,14 +9,12 @@ from lolaudit.exceptions import (
     UnknownSearchStateError,
 )
 from lolaudit.lcu import LeagueClient
-from lolaudit.models import Gameflow, MatchmakingState
+from lolaudit.models import MatchmakingState
 
 logger = logging.getLogger(__name__)
 
 
 class MatchManager(QObject):
-    gameflow_change = Signal(Gameflow, dict)
-
     def __init__(self, client: LeagueClient) -> None:
         super().__init__()
         self.__client = client
