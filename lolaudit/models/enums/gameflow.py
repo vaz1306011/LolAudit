@@ -7,6 +7,7 @@ class Gameflow(Enum):
     LOBBY = auto()
     MATCHMAKING = auto()
     READY_CHECK = auto()
+    GAME_START = auto()
     CHAMP_SELECT = auto()
     IN_PROGRESS = auto()
     RECONNECT = auto()

@@ -66,40 +66,19 @@ class MainController(QObject):
 
         self._gameflow_handle = False
 
-        display_text = None
-        match gameflow:
-            case Gameflow.LOADING:
-                display_text = "讀取中"
+        self.__updating_gameflow = False
 
-            case Gameflow.NONE:
-                display_text = "未在房間內"
-
-            case Gameflow.LOBBY:
-                display_text = "未在列隊中"
-
-            case Gameflow.MATCHMAKING:
-                pass
-
-            case Gameflow.READY_CHECK:
-                pass
-
-            case Gameflow.CHAMP_SELECT:
-                pass
-
-            case Gameflow.IN_PROGRESS:
-                display_text = "遊戲中"
-
-            case Gameflow.RECONNECT:
-                display_text = "重新連接中"
-
-            case Gameflow.PRE_END_OF_GAME:
-                display_text = "點讚畫面"
-
-            case Gameflow.END_OF_GAME:
-                display_text = "結算畫面"
-
-            case Gameflow.UNKNOWN:
-                display_text = "未知狀態"
+        display_text = {
+            Gameflow.LOADING: "讀取中",
+            Gameflow.NONE: "未在房間內",
+            Gameflow.LOBBY: "未在列隊中",
+            Gameflow.GAME_START: "準備進入遊戲",
+            Gameflow.IN_PROGRESS: "遊戲中",
+            Gameflow.RECONNECT: "重新連接中",
+            Gameflow.PRE_END_OF_GAME: "點讚畫面",
+            Gameflow.END_OF_GAME: "結算畫面",
+            Gameflow.UNKNOWN: "未知狀態",
+        }.get(gameflow)
 
         if not display_text:
             return
