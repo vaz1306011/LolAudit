@@ -34,7 +34,7 @@ def check_update(current_version: str):
             )
         return UpdateInfo(has_update=False, latest="", url="", notes="")
     except requests.RequestException as e:
-        logger.error(f"Update check failed: {e}")
+        logger.error(f"新版本檢查失敗: {e}")
         return UpdateInfo(has_update=False, latest="", url="", notes="", error=str(e))
 
 

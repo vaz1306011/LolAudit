@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QApplication
 
 from lolaudit import LolAuditUi, __version__, setup_logging
 
-setup_logging(logging.INFO)
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
