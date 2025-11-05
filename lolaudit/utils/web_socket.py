@@ -1,10 +1,19 @@
+from collections.abc import Callable
 from functools import wraps
+from typing import Any, TypeVar
 
 
-def subscribe(url: str):
-    def decorator(func):
+def format_url(url: str) -> str:
+    return "OnJsonApiEvent_" + url.strip("/").replace("/", "_")
+
+
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def subscribe(url: str) -> Callable[[F], F]:
+    def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
             if not args:
                 return
 
@@ -13,10 +22,6 @@ def subscribe(url: str):
 
             return func(self, *args[1:], **kwargs)
 
-        return wrapper
+        return wrapper  # type: ignore
 
     return decorator
-
-
-def format_url(url: str) -> str:
-    return "OnJsonApiEvent_" + url.strip("/").replace("/", "_")

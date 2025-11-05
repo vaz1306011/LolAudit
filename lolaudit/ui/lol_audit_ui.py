@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class LolAuditUi(QMainWindow, Ui_MainWindow):
-    def __init__(self, version):
+    def __init__(self, version) -> None:
         super().__init__()
         self.version = version
         self.setupUi(self)
@@ -32,7 +32,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.__main_controller.uiUpdate.connect(self.__onUiUpdate)
         logger.info("主控制器初始化完成")
 
-    def __init_ui(self):
+    def __init_ui(self) -> None:
         logger.info("開始初始化UI")
         cfg = self.__main_controller.config
         self.accept_delay_value.setText(str(cfg.get_config(ConfigKeys.ACCEPT_DELAY)))
@@ -71,7 +71,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("UI 初始化完成")
 
     @Slot(str)
-    def __onUiUpdate(self, text: str):
+    def __onUiUpdate(self, text: str) -> None:
         self.label.setText(text)
 
         match self.__main_controller.gameflow:
@@ -89,18 +89,18 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
                 self.match_button.setDisabled(True)
                 self.match_button.hide()
 
-    def __onMatchButtonClick(self):
+    def __onMatchButtonClick(self) -> None:
         if self.__main_controller.gameflow == Gameflow.LOBBY:
             self.__main_controller.start_matchmaking()
         else:
             self.__main_controller.stop_matchmaking()
 
-    def __set_always_on_top(self, status: bool):
+    def __set_always_on_top(self, status: bool) -> None:
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, status)
         self.show()
         self.__main_controller.config.set_config(ConfigKeys.ALWAYS_ON_TOP, status)
 
-    def __check_update(self, version):
+    def __check_update(self, version) -> None:
         result = check_update(version)
         if not result.has_update:
             logger.info("已是最新版本")
@@ -123,15 +123,15 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         if msg.exec() == QMessageBox.StandardButton.Yes:
             QDesktopServices.openUrl(QUrl(url))
 
-    def __exit_app(self):
+    def __exit_app(self) -> None:
         self.__thread.quit()
         QApplication.quit()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         event.ignore()
         self.hide()
 
-    def start(self):
+    def start(self) -> None:
         self.__init_ui()
         self.__check_update(self.version)
         self.show()

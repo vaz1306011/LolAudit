@@ -11,6 +11,7 @@ class Gameflow(Enum):
     CHAMP_SELECT = auto()
     IN_PROGRESS = auto()
     RECONNECT = auto()
+    WAITING_FOR_STATS = auto()
     PRE_END_OF_GAME = auto()
     END_OF_GAME = auto()
     UNKNOWN = auto()

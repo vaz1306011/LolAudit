@@ -3,7 +3,7 @@ import traceback
 
 
 class TraceStyleFormatter(logging.Formatter):
-    def format(self, record):
+    def format(self, record) -> str:
         level = f"[{record.levelname}]"
         time = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
 

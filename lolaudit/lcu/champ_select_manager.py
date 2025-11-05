@@ -16,14 +16,14 @@ class ChampSelectManager(QObject):
     remainingTimeChange = Signal(int)
     champSelectFinish = Signal()
 
-    def __init__(self, client: "LeagueClient"):
+    def __init__(self, client: "LeagueClient") -> None:
         super().__init__()
         self.__client = client
         self.__client.websocketOnMessage.connect(self.__onChampSelectSessionChange)
         self.__session: dict
         self.__timer = None
 
-    def __get_champ_select_session(self):
+    def __get_champ_select_session(self) -> dict:
         url = "/lol-champ-select/v1/session"
         return self.__client.get(url)
 
@@ -32,7 +32,7 @@ class ChampSelectManager(QObject):
     def __onChampSelectSessionChange(self, session: dict) -> None:
         self.__session = session
 
-    def __onTimerTimeout(self):
+    def __onTimerTimeout(self) -> None:
         timer = self.__session["timer"]
         adjustedTimeLeftInPhase = timer["adjustedTimeLeftInPhase"] / 1000
         internalNowInEpochMs = timer["internalNowInEpochMs"] / 1000
@@ -60,6 +60,5 @@ class ChampSelectManager(QObject):
     def stop(self) -> None:
         url = "/lol-champ-select/v1/session"
         self.__client.unsubscribe(url)
-        if self.__timer:
-            self.__timer.stop()
+        self.__timer = None
         self.champSelectFinish.emit()

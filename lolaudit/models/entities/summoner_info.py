@@ -11,7 +11,7 @@ class SummonerInfo(BaseModel):
     tagLine: Optional[str] = None
 
     @model_validator(mode="before")
-    def validate_fields(cls, values):
+    def validate_fields(cls, values) -> None:
         if not values.get("puuid"):
             raise SummonerInfoError("無法取得puuid")
         if not values.get("gameName"):

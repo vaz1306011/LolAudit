@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class MainController(QObject):
     uiUpdate = Signal(str)
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.config = ConfigManager()
 
@@ -43,12 +43,12 @@ class MainController(QObject):
         return self.__gameflow
 
     @gameflow.setter
-    def gameflow(self, value: Gameflow):
+    def gameflow(self, value: Gameflow) -> None:
         self.__gameflow = value
         self.__match_manager.gameflow = value
 
     @Slot(Gameflow)
-    def __onGameflowChange(self, gameflow: Gameflow):
+    def __onGameflowChange(self, gameflow: Gameflow) -> None:
         self.__updating_gameflow = getattr(
             self,
             f"_{self.__class__.__name__}__updating_gameflow",
@@ -83,6 +83,7 @@ class MainController(QObject):
             Gameflow.GAME_START: "準備進入遊戲",
             Gameflow.IN_PROGRESS: "遊戲中",
             Gameflow.RECONNECT: "重新連接中",
+            Gameflow.WAITING_FOR_STATS: "等待結算中",
             Gameflow.PRE_END_OF_GAME: "點讚畫面",
             Gameflow.END_OF_GAME: "結算畫面",
             Gameflow.UNKNOWN: "未知狀態",
@@ -93,11 +94,11 @@ class MainController(QObject):
 
         self.uiUpdate.emit(display_text)
 
-    def __refresh_gameflow(self):
+    def __refresh_gameflow(self) -> None:
         self.__onGameflowChange(self.__gameflow_manager.get_gameflow())
 
     @Slot(MatchmakingState, dict)
-    def __onMatchmakingChange(self, matchmaking_state: MatchmakingState, data):
+    def __onMatchmakingChange(self, matchmaking_state: MatchmakingState, data) -> None:
         match matchmaking_state:
             case MatchmakingState.PENALTY:
                 penalty_time: float = data
@@ -135,38 +136,38 @@ class MainController(QObject):
 
         self.uiUpdate.emit(display_text)
 
-    def __onChampSelectRemainingTimeChange(self, remaining_time: float):
+    def __onChampSelectRemainingTimeChange(self, remaining_time: float) -> None:
         display_text = f"選擇英雄中 - {round(remaining_time)}"
         self.uiUpdate.emit(display_text)
 
-    def __onChampSelectEnd(self):
+    def __onChampSelectEnd(self) -> None:
         self.__refresh_gameflow()
 
-    def __onWebsocketOpen(self):
+    def __onWebsocketOpen(self) -> None:
         self.__client.wait_for_load_summoner_info()
         self.__gameflow_manager.start()
 
-    def __onWebsocketClose(self):
+    def __onWebsocketClose(self) -> None:
         self.start()
 
-    def start_matchmaking(self):
+    def start_matchmaking(self) -> None:
         self.__match_manager.start_matchmaking()
 
-    def stop_matchmaking(self):
+    def stop_matchmaking(self) -> None:
         self.__match_manager.stop_matchmaking()
 
-    def set_accept_delay(self, value: int):
+    def set_accept_delay(self, value: int) -> None:
         self.__match_manager.set_accept_delay(value)
         self.config.set_config(ConfigKeys.ACCEPT_DELAY, value)
 
-    def set_auto_accept(self, value: bool):
+    def set_auto_accept(self, value: bool) -> None:
         self.__match_manager.set_auto_accept(value)
         self.config.set_config(ConfigKeys.AUTO_ACCEPT, value)
 
-    def set_auto_rematch(self, value: bool):
+    def set_auto_rematch(self, value: bool) -> None:
         self.__match_manager.set_auto_rematch(value)
         self.config.set_config(ConfigKeys.AUTO_REMATCH, value)
 
-    def start(self):
+    def start(self) -> None:
         self.__onGameflowChange(Gameflow.LOADING)
         self.__client.start()

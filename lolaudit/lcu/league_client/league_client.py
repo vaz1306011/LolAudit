@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class LeagueClient(ClientRequester, ClientWebSocket):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.token: Optional[str] = None
         self.port: Optional[str] = None

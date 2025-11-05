@@ -18,7 +18,7 @@ class UpdateInfo:
     error: Optional[str] = None
 
 
-def check_update(current_version: str):
+def check_update(current_version: str) -> UpdateInfo:
     url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
     try:
         r = requests.get(url, timeout=3)

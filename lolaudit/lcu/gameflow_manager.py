@@ -18,14 +18,14 @@ class GameflowManager(QObject):
 
     gameflowChange = Signal(Gameflow)
 
-    def __init__(self, client: "LeagueClient"):
+    def __init__(self, client: "LeagueClient") -> None:
         super().__init__()
         self.__client = client
         self.__client.websocketOnMessage.connect(self.__onGameFlowChange)
 
     @web_socket.subscribe("/lol-gameflow/v1/gameflow-phase")
     @Slot(str)
-    def __onGameFlowChange(self, gameflow: str):
+    def __onGameFlowChange(self, gameflow: str) -> None:
         gameflow = constcase(gameflow)
         try:
             self.gameflowChange.emit(Gameflow[gameflow])
@@ -33,7 +33,7 @@ class GameflowManager(QObject):
             logger.warning(f"未知的gameflow狀態: {gameflow}")
             self.gameflowChange.emit(Gameflow.UNKNOWN)
 
-    def start(self):
+    def start(self) -> None:
         url = "/lol-gameflow/v1/gameflow-phase"
         self.__client.subscribe(url)
         self.gameflowChange.emit(self.get_gameflow())

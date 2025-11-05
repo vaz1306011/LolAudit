@@ -18,7 +18,7 @@ class ClientWebSocket(QObject):
     websocketOnMessage = Signal(str, object)
     websocketOnClose = Signal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.port: str
         self.token: str
@@ -26,11 +26,11 @@ class ClientWebSocket(QObject):
         self.__subscribed = set()
         self.__running = False
 
-    def __on_open(self, ws):
+    def __on_open(self, ws) -> None:
         logger.info("WebSocket連接已開啟")
         self.websocketOnOpen.emit()
 
-    def __on_message(self, ws, msg: str):
+    def __on_message(self, ws, msg: str) -> None:
         if not msg.strip():
             return
         try:
@@ -41,19 +41,19 @@ class ClientWebSocket(QObject):
         except Exception as e:
             logger.warning(f"解析錯誤: {e}")
 
-    def __on_close(self, ws, close_status_code, close_msg):
+    def __on_close(self, ws, close_status_code, close_msg) -> None:
         logger.info(f"WebSocket連接已關閉")
         self.__running = False
         self.__subscribed.clear()
         self.__ws = None
         self.websocketOnClose.emit()
 
-    def start_websocket(self):
+    def start_websocket(self) -> None:
         if self.__running or self.__ws:
             logger.warning("WebSocket已在運行中，無法重複啟動")
             return
 
-        def __run():
+        def __run() -> None:
             self.__running = True
             while self.__running:
                 try:
@@ -80,7 +80,7 @@ class ClientWebSocket(QObject):
 
         Thread(target=__run, daemon=True).start()
 
-    def subscribe(self, url: str):
+    def subscribe(self, url: str) -> None:
         if not self.__ws:
             logger.warning("WebSocket未連接，無法訂閱頻道")
             return
@@ -93,7 +93,7 @@ class ClientWebSocket(QObject):
 
         self._handle = False
 
-    def unsubscribe(self, url: str):
+    def unsubscribe(self, url: str) -> None:
         if not self.__ws:
             logger.warning(f"WebSocket未連接，無法取消訂閱頻道\n{url}")
             return
@@ -104,7 +104,7 @@ class ClientWebSocket(QObject):
         unsubscribe_msg = [6, url]
         self.__ws.send(json.dumps(unsubscribe_msg))
 
-    def stop_websocket(self):
+    def stop_websocket(self) -> None:
         if not self.__ws:
             logger.warning("WebSocket未連接，無法停止")
             return
