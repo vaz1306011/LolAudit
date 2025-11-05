@@ -29,7 +29,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
 
         logger.info("開始初始化主控制器")
         self.__main_controller = MainController()
-        self.__main_controller.ui_update.connect(self.__on_ui_update)
+        self.__main_controller.uiUpdate.connect(self.__onUiUpdate)
         logger.info("主控制器初始化完成")
 
     def __init_ui(self):
@@ -40,7 +40,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
             self.__main_controller.set_accept_delay
         )
 
-        self.match_button.clicked.connect(self.__on_match_button_click)
+        self.match_button.clicked.connect(self.__onMatchButtonClick)
 
         for key, widget, func in [
             (
@@ -71,7 +71,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("UI 初始化完成")
 
     @Slot(str)
-    def __on_ui_update(self, text: str):
+    def __onUiUpdate(self, text: str):
         self.label.setText(text)
 
         match self.__main_controller.gameflow:
@@ -89,7 +89,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
                 self.match_button.setDisabled(True)
                 self.match_button.hide()
 
-    def __on_match_button_click(self):
+    def __onMatchButtonClick(self):
         if self.__main_controller.gameflow == Gameflow.LOBBY:
             self.__main_controller.start_matchmaking()
         else:

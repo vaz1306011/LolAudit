@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class ClientWebSocket(QObject):
-    websocket_on_open = Signal()
-    websocket_on_message = Signal(str, object)
-    websocket_on_close = Signal()
+    websocketOnOpen = Signal()
+    websocketOnMessage = Signal(str, object)
+    websocketOnClose = Signal()
 
     def __init__(self):
         super().__init__()
@@ -28,14 +28,14 @@ class ClientWebSocket(QObject):
 
     def __on_open(self, ws):
         logger.info("WebSocket連接已開啟")
-        self.websocket_on_open.emit()
+        self.websocketOnOpen.emit()
 
     def __on_message(self, ws, msg: str):
         if not msg.strip():
             return
         try:
             _, url, data = json.loads(msg)
-            self.websocket_on_message.emit(url, data.get("data"))
+            self.websocketOnMessage.emit(url, data.get("data"))
         except json.JSONDecodeError as e:
             logger.warning(f"JSON解析錯誤: {e}\n  訊息內容: {msg}")
         except Exception as e:
@@ -46,7 +46,7 @@ class ClientWebSocket(QObject):
         self.__running = False
         self.__subscribed.clear()
         self.__ws = None
-        self.websocket_on_close.emit()
+        self.websocketOnClose.emit()
 
     def start_websocket(self):
         if self.__running or self.__ws:
