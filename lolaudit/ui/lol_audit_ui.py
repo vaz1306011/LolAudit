@@ -63,8 +63,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
             widget.setCheckable(True)
             widget.setChecked(status)
             widget.triggered.connect(func)
-            if key == ConfigKeys.ALWAYS_ON_TOP:
-                self.__set_always_on_top(status)
+            func(status)
 
         self.tray = Tray(self, self.__icon)
         self.tray.quit_action.triggered.connect(self.__exit_app)
