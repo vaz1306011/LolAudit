@@ -5,6 +5,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from lolaudit.config import ConfigManager
 from lolaudit.lcu import ChampSelectManager, GameflowManager, LeagueClient, MatchManager
 from lolaudit.models import ConfigKeys, Gameflow, MatchmakingState
+from lolaudit.utils import web_socket
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,9 @@ class MainController(QObject):
                 case Gameflow.LOBBY | Gameflow.MATCHMAKING:
                     self.__match_manager.start()
                 case Gameflow.READY_CHECK:
-                    self.__match_manager._in_ready_check({})
+                    self.__client.websocketOnMessage.emit(
+                        web_socket.format_url("/lol-matchmaking/v1/search"), {}
+                    )
                 case _:
                     self.__match_manager.stop()
             match gameflow:

@@ -1,7 +1,6 @@
 import logging
 from math import floor
 from pprint import pformat
-from typing import Optional
 
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
@@ -15,11 +14,11 @@ from lolaudit.models import Gameflow, MatchmakingState
 from lolaudit.utils import web_socket
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class MatchManager(QObject):
     matchmakingChange = Signal(MatchmakingState, object)
+    __stopReadyCheckTimer = Signal()
 
     def __init__(self, client: LeagueClient) -> None:
         super().__init__()
@@ -31,7 +30,10 @@ class MatchManager(QObject):
 
         self.__auto_accept = True
         self.__accept_delay = 3
-        self.__ready_check_timer: Optional[QTimer] = None
+        self.__ready_check_timer: QTimer = QTimer()
+        self.__ready_check_timer.setInterval(1000)
+        self.__ready_check_timer.timeout.connect(self.__onReadyCheckTimerTick)
+        self.__stopReadyCheckTimer.connect(self.__stop_ready_check_timer)
         self.__auto_rematch = True
         self.__auto_start_match = True
 
@@ -42,6 +44,7 @@ class MatchManager(QObject):
     def stop(self) -> None:
         url = "/lol-matchmaking/v1/search"
         self.__client.unsubscribe(url)
+        self.__stopReadyCheckTimer.emit()
 
     @web_socket.subscribe("/lol-matchmaking/v1/search")
     @Slot(dict)
@@ -100,47 +103,81 @@ class MatchManager(QObject):
                 logger.warning(f"未知的搜索狀態: {pformat(mchmking_info)}")
                 raise UnknownSearchStateError(search_state)
 
+    def __start_ready_check_timer(self) -> None:
+        logger.debug("啟動準備接受對戰計時器")
+        if self.__ready_check_timer.isActive():
+            return
+        self.__ready_check_timer.start()
+        return
+
+    def __stop_ready_check_timer(self) -> None:
+        logger.debug("停止準備接受對戰計時器")
+        if not self.__ready_check_timer.isActive():
+            return
+        self.__ready_check_timer.stop()
+        return
+
+    def __onReadyCheckTimerTick(self) -> None:
+        ready_check = self.get_matchmaking_info().get("readyCheck", {})
+        pass_time = int(ready_check.get("timer", -1))
+
+        logger.debug(f"pass_time: {pass_time}\nready_check: {pformat(ready_check)}")
+
+        if not self.__auto_accept:
+            self.matchmakingChange.emit(
+                MatchmakingState.WAITING_ACCEPT,
+                {"pass_time": pass_time},
+            )
+            return
+
+        self.matchmakingChange.emit(
+            MatchmakingState.WAITING_ACCEPT,
+            {
+                "pass_time": pass_time,
+                "accept_delay": self.__accept_delay,
+            },
+        )
+
+        if pass_time >= self.__accept_delay:
+            logger.debug("自動接受對戰")
+            self.accept_match()
+
+    # /lol-lobby/v2/lobby/matchmaking/search-state
     @web_socket.subscribe("/lol-matchmaking/v1/search")
     @Slot(dict)
-    def in_ready_check(self, mchmking_info: dict) -> None:
-        if self.gameflow != Gameflow.READY_CHECK or not mchmking_info:
+    def inReadyCheck(self, mchmking_info: dict) -> None:
+        if self.gameflow != Gameflow.READY_CHECK:
             return
-        playerResponse = mchmking_info.get("readyCheck", {}).get("playerResponse")
-        match playerResponse:
-            case "None":
-                if not self.__auto_accept:
+        if not mchmking_info:
+            mchmking_info = self.get_matchmaking_info()
+
+        # logger.debug(pformat(mchmking_info))
+        ready_check = mchmking_info.get("readyCheck", {})
+
+        playerResponse = ready_check.get("playerResponse")
+        state = ready_check.get("state")
+        match playerResponse, state:
+            case "None", "InProgress":
+                if self.__ready_check_timer.isActive():
                     return
+                self.__start_ready_check_timer()
 
-                ready_check_data = self.get_matchmaking_info()["readyCheck"]
-                if ready_check_data["state"] != "InProgress":
-                    return
-                pass_time = round(ready_check_data["timer"])
+            case ("None", "Invalid") | (None, _):
+                pass
 
-                def __is_playerResponsed() -> bool:
-                    mchmking_info: dict = self.get_matchmaking_info()
-                    playerResponse = mchmking_info.get("readyCheck", {}).get(
-                        "playerResponse"
-                    )
-                    return playerResponse in ("Accepted", "Declined")
+            case "Accepted", _:
+                self.__stop_ready_check_timer()
+                self.matchmakingChange.emit(MatchmakingState.ACCEPTED, None)
 
-                if not __is_playerResponsed() and pass_time >= self.__accept_delay:
-                    self.accept_match()
-                    self.matchmaking_change.emit(MatchmakingState.ACCEPTED, None)
-                    return
-
-                self.matchmaking_change.emit(
-                    MatchmakingState.WAITING_ACCEPT,
-                    {"pass_time": pass_time, "accept_delay": self.__accept_delay},
-                )
-
-            case "Accepted":
-                self.matchmaking_change.emit(MatchmakingState.ACCEPTED, None)
-
-            case "Declined":
-                self.matchmaking_change.emit(MatchmakingState.DECLINED, None)
+            case "Declined", _:
+                self.__stop_ready_check_timer()
+                self.matchmakingChange.emit(MatchmakingState.DECLINED, None)
 
             case _:
-                raise UnknownPlayerResponseError(playerResponse)
+                self.__stop_ready_check_timer()
+                raise UnknownPlayerResponseError(
+                    f"{playerResponse}<{type(playerResponse)}>, {state}<{type(state)}>"
+                )
 
     def get_accept_delay(self) -> int:
         return self.__accept_delay

@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from . import LeagueClient
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 class ChampSelectManager(QObject):
@@ -40,6 +41,7 @@ class ChampSelectManager(QObject):
         self.remainingTimeChange.emit(remaining_time)
 
     def start(self) -> None:
+        logger.debug("開始選角監聽")
         url = "/lol-champ-select/v1/session"
         self.__client.subscribe(url)
         self.__session = self.__get_champ_select_session()
@@ -58,6 +60,7 @@ class ChampSelectManager(QObject):
         return actions
 
     def stop(self) -> None:
+        logger.debug("結束選角監聽")
         url = "/lol-champ-select/v1/session"
         self.__client.unsubscribe(url)
         self.__timer = None
