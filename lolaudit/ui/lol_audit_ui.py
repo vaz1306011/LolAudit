@@ -2,8 +2,8 @@ import logging
 import platform
 
 from PySide6.QtCore import Qt, QThread, QUrl, Slot
-from PySide6.QtGui import QDesktopServices, QIcon
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PySide6.QtGui import QAction, QDesktopServices, QIcon
+from PySide6.QtWidgets import QApplication, QLineEdit, QMainWindow, QMessageBox
 
 from lolaudit.core import MainController
 from lolaudit.models import ConfigKeys, Gameflow
@@ -34,15 +34,15 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
 
     def __init_ui(self) -> None:
         logger.info("開始初始化UI")
-        cfg = self.__main_controller.config
-        self.accept_delay_value.setText(str(cfg.get_config(ConfigKeys.ACCEPT_DELAY)))
-        self.accept_delay_value.textChanged.connect(
-            self.__main_controller.set_accept_delay
-        )
-
         self.match_button.clicked.connect(self.__onMatchButtonClick)
 
+        cfg = self.__main_controller.config
         for key, widget, func in [
+            (
+                ConfigKeys.ACCEPT_DELAY,
+                self.accept_delay_value,
+                self.__main_controller.set_accept_delay,
+            ),
             (
                 ConfigKeys.ALWAYS_ON_TOP,
                 self.always_on_top_status,
@@ -59,10 +59,14 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
                 self.__main_controller.set_auto_rematch,
             ),
         ]:
-            status = bool(cfg.get_config(key))
-            widget.setCheckable(True)
-            widget.setChecked(status)
-            widget.triggered.connect(func)
+            status = cfg.get_config(key)
+            if isinstance(widget, QAction):
+                widget.setCheckable(True)
+                widget.setChecked(bool(status))
+                widget.triggered.connect(func)
+            elif isinstance(widget, QLineEdit):
+                widget.setText(str(status))
+                widget.textChanged.connect(func)
             func(status)
 
         self.tray = Tray(self, self.__icon)
