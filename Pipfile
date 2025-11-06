@@ -4,17 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-urllib3 = "*"
-psutil = "*"
-pyside6 = "*"
 appdirs = "*"
+psutil = "*"
 pydantic = "*"
-stringcase = "*"
-
-[dev-packages]
-ipykernel = "*"
 pyinstaller = "*"
+pyside6 = "*"
+requests = "*"
+stringcase = "*"
+urllib3 = "*"
 websocket-client = "*"
 
 [requires]
