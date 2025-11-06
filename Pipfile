@@ -9,10 +9,13 @@ urllib3 = "*"
 psutil = "*"
 pyside6 = "*"
 appdirs = "*"
+pydantic = "*"
+stringcase = "*"
 
 [dev-packages]
 ipykernel = "*"
 pyinstaller = "*"
+websocket-client = "*"
 
 [requires]
 python_version = "3.10"

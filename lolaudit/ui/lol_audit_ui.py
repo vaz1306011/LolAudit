@@ -1,13 +1,12 @@
 import logging
 import platform
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QThread, QUrl, Slot
 from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
-from lolaudit.config import ConfigKeys
 from lolaudit.core import MainController
-from lolaudit.models import Gameflow
+from lolaudit.models import ConfigKeys, Gameflow
 from lolaudit.ui import Tray, Ui_MainWindow
 from lolaudit.utils import check_update, resource_path
 
@@ -15,10 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class LolAuditUi(QMainWindow, Ui_MainWindow):
-    def __init__(self, version):
+    def __init__(self, version) -> None:
         super().__init__()
+        self.version = version
         self.setupUi(self)
-        self.setWindowTitle(f"LOL Audit {version}")
+        self.setWindowTitle(f"LOL Audit {self.version}")
         icon_path = (
             "./lol_audit.icns" if platform.system() == "Darwin" else "./lol_audit.ico"
         )
@@ -27,26 +27,20 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
-        logger.info("初始化主控制器")
+        logger.info("開始初始化主控制器")
         self.__main_controller = MainController()
-        self.__main_controller.ui_update.connect(self.__on_ui_update)
+        self.__main_controller.uiUpdate.connect(self.__onUiUpdate)
         logger.info("主控制器初始化完成")
 
-        self.__init_ui()
-        logger.info("UI 初始化完成")
-
-        self.__check_update(version)
-
-        self.gameflow: Gameflow
-
-    def __init_ui(self):
+    def __init_ui(self) -> None:
+        logger.info("開始初始化UI")
         cfg = self.__main_controller.config
         self.accept_delay_value.setText(str(cfg.get_config(ConfigKeys.ACCEPT_DELAY)))
         self.accept_delay_value.textChanged.connect(
             self.__main_controller.set_accept_delay
         )
 
-        self.match_button.clicked.connect(self.__on_match_button_click)
+        self.match_button.clicked.connect(self.__onMatchButtonClick)
 
         for key, widget, func in [
             (
@@ -69,18 +63,18 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
             widget.setCheckable(True)
             widget.setChecked(status)
             widget.triggered.connect(func)
-            if key == ConfigKeys.ALWAYS_ON_TOP:
-                self.__set_always_on_top(status)
+            func(status)
 
         self.tray = Tray(self, self.__icon)
         self.tray.quit_action.triggered.connect(self.__exit_app)
         self.tray.show()
+        logger.info("UI 初始化完成")
 
-    def __on_ui_update(self, gameflow: Gameflow, text: str):
-        self.gameflow = gameflow
+    @Slot(str)
+    def __onUiUpdate(self, text: str) -> None:
         self.label.setText(text)
 
-        match gameflow:
+        match self.__main_controller.gameflow:
             case Gameflow.LOBBY:
                 self.match_button.setText("開始列隊")
                 self.match_button.setDisabled(False)
@@ -95,18 +89,18 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
                 self.match_button.setDisabled(True)
                 self.match_button.hide()
 
-    def __on_match_button_click(self):
-        if self.gameflow == Gameflow.LOBBY:
+    def __onMatchButtonClick(self) -> None:
+        if self.__main_controller.gameflow == Gameflow.LOBBY:
             self.__main_controller.start_matchmaking()
         else:
             self.__main_controller.stop_matchmaking()
 
-    def __set_always_on_top(self, status: bool):
+    def __set_always_on_top(self, status: bool) -> None:
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, status)
         self.show()
         self.__main_controller.config.set_config(ConfigKeys.ALWAYS_ON_TOP, status)
 
-    def __check_update(self, version):
+    def __check_update(self, version) -> None:
         result = check_update(version)
         if not result.has_update:
             logger.info("已是最新版本")
@@ -129,10 +123,22 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         if msg.exec() == QMessageBox.StandardButton.Yes:
             QDesktopServices.openUrl(QUrl(url))
 
-    def __exit_app(self):
-        self.__main_controller.stop()
+    def __exit_app(self) -> None:
+        self.__thread.quit()
         QApplication.quit()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         event.ignore()
         self.hide()
+
+    def start(self) -> None:
+        self.__init_ui()
+        self.__check_update(self.version)
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+        self.__thread = QThread()
+        self.__main_controller.moveToThread(self.__thread)
+        self.__thread.started.connect(self.__main_controller.start)
+        self.__thread.start()

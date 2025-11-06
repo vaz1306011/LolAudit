@@ -23,6 +23,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     lol_audit_ui = LolAuditUi(__version__)
-    lol_audit_ui.show()
+    lol_audit_ui.start()
 
     sys.exit(app.exec())

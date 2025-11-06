@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class Config:
+class Config(BaseModel):
     always_on_top: bool = True
     backguard_startup: bool = True
     auto_accept: bool = True

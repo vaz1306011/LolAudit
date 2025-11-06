@@ -1,30 +1,55 @@
+import logging
 import time
+from typing import TYPE_CHECKING
+
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
+
+from lolaudit.utils import web_socket
+
+if TYPE_CHECKING:
+    from . import LeagueClient
+
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
-class ChampSelectManager:
+class ChampSelectManager(QObject):
+    remainingTimeChange = Signal(int)
+    champSelectFinish = Signal()
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, client: "LeagueClient") -> None:
+        super().__init__()
+        self.__client = client
+        self.__client.websocketOnMessage.connect(self.__onChampSelectSessionChange)
+        self.__session: dict
+        self.__timer = None
 
-    def __get_champ_select_session(self):
-        url = "lol-champ-select/v1/session"
-        return self.client._get(url)
+    def __get_champ_select_session(self) -> dict:
+        url = "/lol-champ-select/v1/session"
+        return self.__client.get(url)
 
-    def __get_champ_select_timer(self) -> dict:
-        url = "lol-champ-select/v1/session/timer"
-        return self.client._get(url)
+    @web_socket.subscribe("/lol-champ-select/v1/session")
+    @Slot(dict)
+    def __onChampSelectSessionChange(self, session: dict) -> None:
+        self.__session = session
 
-    def get_champ_select_remaining_time(self):
-        response = self.__get_champ_select_timer()
-        adjustedTimeLeftInPhase = response["adjustedTimeLeftInPhase"] / 1000
-        internalNowInEpochMs = response["internalNowInEpochMs"] / 1000
+    def __onTimerTimeout(self) -> None:
+        timer = self.__session["timer"]
+        adjustedTimeLeftInPhase = timer["adjustedTimeLeftInPhase"] / 1000
+        internalNowInEpochMs = timer["internalNowInEpochMs"] / 1000
         remaining_time = (adjustedTimeLeftInPhase + internalNowInEpochMs) - time.time()
-        return remaining_time
+        self.remainingTimeChange.emit(remaining_time)
 
-    def get_champ_select_my_team(self) -> list:
-        session = self.__get_champ_select_session()
-        myTeam = session.get("myTeam", [])
-        return myTeam
+    def start(self) -> None:
+        logger.debug("開始選角監聽")
+        url = "/lol-champ-select/v1/session"
+        self.__client.subscribe(url)
+        self.__session = self.__get_champ_select_session()
+
+        self.__timer = QTimer()
+        self.__timer.setInterval(250)
+        self.__timer.timeout.connect(self.__onTimerTimeout)
+        self.__timer.start()
 
     def get_champ_select_actions(self) -> list:
         """
@@ -33,3 +58,10 @@ class ChampSelectManager:
         session = self.__get_champ_select_session()
         actions = session.get("actions", [])
         return actions
+
+    def stop(self) -> None:
+        logger.debug("結束選角監聽")
+        url = "/lol-champ-select/v1/session"
+        self.__client.unsubscribe(url)
+        self.__timer = None
+        self.champSelectFinish.emit()
