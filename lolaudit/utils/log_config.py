@@ -1,4 +1,5 @@
 import logging
+import sys
 import traceback
 
 
@@ -50,7 +51,8 @@ def setup_logging() -> None:
     logger = logging.getLogger("lolaudit")
     logger.setLevel(logging.INFO)
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    if getattr(sys, "frozen", False):
+        logger.addHandler(file_handler)
     logger.propagate = False
 
     web_socket_logger = logging.getLogger("websocket")
