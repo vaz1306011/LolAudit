@@ -1,4 +1,5 @@
 import logging
+import sys
 import traceback
 
 
@@ -40,8 +41,10 @@ def setup_logging() -> None:
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
 
-    file_handler = logging.FileHandler("lolaudit.log", encoding="utf-8")
-    file_handler.setFormatter(formatter)
+    file_handler = None
+    if not getattr(sys, "frozen", False):
+        file_handler = logging.FileHandler("lolaudit0.log", encoding="utf-8")
+        file_handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.WARNING)
@@ -50,7 +53,9 @@ def setup_logging() -> None:
     logger = logging.getLogger("lolaudit")
     logger.setLevel(logging.INFO)
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    file_handler and logger.addHandler(
+        file_handler
+    )  # pyright: ignore[reportUnusedExpression]
     logger.propagate = False
 
     web_socket_logger = logging.getLogger("websocket")
