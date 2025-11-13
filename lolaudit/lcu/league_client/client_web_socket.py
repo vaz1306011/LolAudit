@@ -82,7 +82,6 @@ class ClientWebSocket(QObject):
 
     def subscribe(self, url: str) -> None:
         if not self.__ws:
-            logger.warning("WebSocket未連接，無法訂閱頻道")
             return
         if url in self.__subscribed:
             return
@@ -95,7 +94,6 @@ class ClientWebSocket(QObject):
 
     def unsubscribe(self, url: str) -> None:
         if not self.__ws:
-            logger.warning(f"WebSocket未連接，無法取消訂閱頻道\n{url}")
             return
         if url not in self.__subscribed:
             return
@@ -106,7 +104,6 @@ class ClientWebSocket(QObject):
 
     def stop_websocket(self) -> None:
         if not self.__ws:
-            logger.warning("WebSocket未連接，無法停止")
             return
 
         self.__ws.close()

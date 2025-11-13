@@ -2,7 +2,6 @@ import logging
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from lolaudit.config import ConfigManager
 from lolaudit.lcu import ChampSelectManager, GameflowManager, LeagueClient, MatchManager
 from lolaudit.models import ConfigKeys, Gameflow, MatchmakingState
 from lolaudit.utils import web_socket
@@ -11,11 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class MainController(QObject):
-    uiUpdate = Signal(str)
+    labelEditRequest = Signal(str)
+    gameflowChange = Signal(Gameflow)
 
-    def __init__(self) -> None:
+    def __init__(self, config) -> None:
         super().__init__()
-        self.config = ConfigManager()
+        self._config = config
 
         self.__client = LeagueClient()
         self.__client.websocketOnOpen.connect(self.__onWebsocketOpen)
@@ -25,7 +25,7 @@ class MainController(QObject):
         self.__gameflow_manager.gameflowChange.connect(self.__onGameflowChange)
         self.__gameflow = None
 
-        self.__match_manager = MatchManager(self.__client)
+        self.__match_manager = MatchManager(self.__client, self._config)
         self.__match_manager.matchmakingChange.connect(self.__onMatchmakingChange)
 
         self.__champ_select_manager = ChampSelectManager(self.__client)
@@ -47,6 +47,22 @@ class MainController(QObject):
     def gameflow(self, value: Gameflow) -> None:
         self.__gameflow = value
         self.__match_manager.gameflow = value
+
+    def start(self) -> None:
+        self.__onGameflowChange(Gameflow.LOADING)
+        self.__client.start()
+
+    def stop(self) -> None:
+        self.__match_manager.stop()
+        self.__champ_select_manager.stop()
+        self.__gameflow_manager.stop()
+        self.__client.stop()
+
+    def match_toggle(self) -> None:
+        if self.__gameflow == Gameflow.MATCHMAKING:
+            self.__match_manager.stop_matchmaking()
+        else:
+            self.__match_manager.start_matchmaking()
 
     @Slot(Gameflow)
     def __onGameflowChange(self, gameflow: Gameflow) -> None:
@@ -77,6 +93,7 @@ class MainController(QObject):
                 case _:
                     self.__champ_select_manager.stop()
 
+        self.gameflowChange.emit(gameflow)
         self.__updating_gameflow = False
 
         display_text = {
@@ -95,10 +112,7 @@ class MainController(QObject):
         if not display_text:
             return
 
-        self.uiUpdate.emit(display_text)
-
-    def __refresh_gameflow(self) -> None:
-        self.__onGameflowChange(self.__gameflow_manager.get_gameflow())
+        self.labelEditRequest.emit(display_text)
 
     @Slot(MatchmakingState, dict)
     def __onMatchmakingChange(self, matchmaking_state: MatchmakingState, data) -> None:
@@ -137,14 +151,7 @@ class MainController(QObject):
             case MatchmakingState.DECLINED:
                 display_text = "已拒絕對戰"
 
-        self.uiUpdate.emit(display_text)
-
-    def __onChampSelectRemainingTimeChange(self, remaining_time: float) -> None:
-        display_text = f"選擇英雄中 - {round(remaining_time)}"
-        self.uiUpdate.emit(display_text)
-
-    def __onChampSelectEnd(self) -> None:
-        self.__refresh_gameflow()
+        self.labelEditRequest.emit(display_text)
 
     def __onWebsocketOpen(self) -> None:
         self.__client.wait_for_load_summoner_info()
@@ -153,24 +160,12 @@ class MainController(QObject):
     def __onWebsocketClose(self) -> None:
         self.start()
 
-    def start_matchmaking(self) -> None:
-        self.__match_manager.start_matchmaking()
+    def __refresh_gameflow(self) -> None:
+        self.__onGameflowChange(self.__gameflow_manager.get_gameflow())
 
-    def stop_matchmaking(self) -> None:
-        self.__match_manager.stop_matchmaking()
+    def __onChampSelectRemainingTimeChange(self, remaining_time: float) -> None:
+        display_text = f"選擇英雄中 - {round(remaining_time)}"
+        self.labelEditRequest.emit(display_text)
 
-    def set_accept_delay(self, value: int) -> None:
-        self.__match_manager.set_accept_delay(value)
-        self.config.set_config(ConfigKeys.ACCEPT_DELAY, value)
-
-    def set_auto_accept(self, value: bool) -> None:
-        self.__match_manager.set_auto_accept(value)
-        self.config.set_config(ConfigKeys.AUTO_ACCEPT, value)
-
-    def set_auto_rematch(self, value: bool) -> None:
-        self.__match_manager.set_auto_rematch(value)
-        self.config.set_config(ConfigKeys.AUTO_REMATCH, value)
-
-    def start(self) -> None:
-        self.__onGameflowChange(Gameflow.LOADING)
-        self.__client.start()
+    def __onChampSelectEnd(self) -> None:
+        self.__refresh_gameflow()

@@ -23,20 +23,14 @@ class GameflowManager(QObject):
         self.__client = client
         self.__client.websocketOnMessage.connect(self.__onGameFlowChange)
 
-    @web_socket.subscribe("/lol-gameflow/v1/gameflow-phase")
-    @Slot(str)
-    def __onGameFlowChange(self, gameflow: str) -> None:
-        gameflow = constcase(gameflow)
-        try:
-            self.gameflowChange.emit(Gameflow[gameflow])
-        except KeyError:
-            logger.warning(f"未知的gameflow狀態: {gameflow}")
-            self.gameflowChange.emit(Gameflow.UNKNOWN)
-
     def start(self) -> None:
         url = "/lol-gameflow/v1/gameflow-phase"
         self.__client.subscribe(url)
         self.gameflowChange.emit(self.get_gameflow())
+
+    def stop(self) -> None:
+        url = "/lol-gameflow/v1/gameflow-phase"
+        self.__client.unsubscribe(url)
 
     def get_gameflow(self) -> Gameflow:
         """
@@ -53,3 +47,13 @@ class GameflowManager(QObject):
             return Gameflow[gameflow]
         except KeyError:
             raise UnknownGameflowStateError(f"未知的gameflow狀態: {gameflow}")
+
+    @web_socket.subscribe("/lol-gameflow/v1/gameflow-phase")
+    @Slot(str)
+    def __onGameFlowChange(self, gameflow: str) -> None:
+        gameflow = constcase(gameflow)
+        try:
+            self.gameflowChange.emit(Gameflow[gameflow])
+        except KeyError:
+            logger.warning(f"未知的gameflow狀態: {gameflow}")
+            self.gameflowChange.emit(Gameflow.UNKNOWN)

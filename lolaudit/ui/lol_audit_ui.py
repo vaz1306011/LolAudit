@@ -1,24 +1,37 @@
 import logging
 import platform
+from functools import partial, partialmethod
 
-from PySide6.QtCore import Qt, QThread, QUrl, Slot
+from PySide6.QtCore import Qt, QUrl, Signal, Slot
 from PySide6.QtGui import QAction, QDesktopServices, QIcon
-from PySide6.QtWidgets import QApplication, QLineEdit, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QLineEdit, QMainWindow, QMessageBox
 
-from lolaudit.core import MainController
-from lolaudit.models import ConfigKeys, Gameflow
-from lolaudit.ui import Tray, Ui_MainWindow
-from lolaudit.utils import check_update, resource_path
+from lolaudit.config import ConfigManager
+from lolaudit.models import ConfigKeys, Gameflow, UpdateInfo
+from lolaudit.utils import resource_path
+
+from .tray import Tray
+from .ui import Ui_MainWindow
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class LolAuditUi(QMainWindow, Ui_MainWindow):
-    def __init__(self, version) -> None:
+    matchToggleRequested = Signal()
+    exitRequested = Signal()
+
+    showUpdateWindow = Signal(UpdateInfo)
+    lableUpdated = Signal(str)
+    gameflowChange = Signal(Gameflow)
+
+    def __init__(self, version: str, config: ConfigManager) -> None:
         super().__init__()
-        self.version = version
+
+        logger.info("開始初始化UI")
+        self.__config = config
         self.setupUi(self)
-        self.setWindowTitle(f"LOL Audit {self.version}")
+        self.setWindowTitle(f"LOL Audit {version}")
         icon_path = (
             "./lol_audit.icns" if platform.system() == "Darwin" else "./lol_audit.ico"
         )
@@ -27,122 +40,115 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.setFixedSize(self.size())
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
-        logger.info("開始初始化主控制器")
-        self.__main_controller = MainController()
-        self.__main_controller.uiUpdate.connect(self.__onUiUpdate)
-        logger.info("主控制器初始化完成")
-
-    def __init_ui(self) -> None:
-        logger.info("開始初始化UI")
-        self.match_button.clicked.connect(self.__onMatchButtonClick)
-
-        cfg = self.__main_controller.config
-        for key, widget, func in [
-            (
-                ConfigKeys.ACCEPT_DELAY,
-                self.accept_delay_value,
-                self.__main_controller.set_accept_delay,
-            ),
-            (
-                ConfigKeys.ALWAYS_ON_TOP,
-                self.always_on_top_status,
-                self.__set_always_on_top,
-            ),
-            (
-                ConfigKeys.AUTO_ACCEPT,
-                self.auto_accept_status,
-                self.__main_controller.set_auto_accept,
-            ),
-            (
-                ConfigKeys.AUTO_REMATCH,
-                self.auto_rematch_status,
-                self.__main_controller.set_auto_rematch,
-            ),
-        ]:
-            status = cfg.get_config(key)
-            if isinstance(widget, QAction):
-                widget.setCheckable(True)
-                widget.setChecked(bool(status))
-                widget.triggered.connect(func)
-            elif isinstance(widget, QLineEdit):
-                widget.setText(str(status))
-                widget.textChanged.connect(func)
-            func(status)
-
         self.tray = Tray(self, self.__icon)
-        self.tray.quit_action.triggered.connect(self.__exit_app)
-        self.tray.show()
+
+        self.__wire_signals()
         logger.info("UI 初始化完成")
 
+    def start(self) -> None:
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.tray.show()
+        self.read_config()
+
+    def read_config(self) -> None:
+        self.accept_delay_value: QLineEdit
+        self.accept_delay_value.setText(
+            str(self.__config.get_config(ConfigKeys.ACCEPT_DELAY))
+        )
+        always_on_top = bool(self.__config.get_config(ConfigKeys.ALWAYS_ON_TOP))
+        self.always_on_top_status: QAction
+        self.always_on_top_status.setChecked(always_on_top)
+        self.__setAlwaysOnTop(always_on_top)
+
+        auto_accept = bool(self.__config.get_config(ConfigKeys.AUTO_ACCEPT))
+        self.auto_accept_status: QAction
+        self.auto_accept_status.setChecked(auto_accept)
+
+        auto_rematch = bool(self.__config.get_config(ConfigKeys.AUTO_REMATCH))
+        self.auto_rematch_status: QAction
+        self.auto_rematch_status.setChecked(auto_rematch)
+
+    @Slot(UpdateInfo)
+    def __onShowUpdateWindow(self, update_info: UpdateInfo) -> None:
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setWindowTitle("有新版本可用！")
+        msg.setText(
+            f"發現新版本: {update_info.latest}\n\n更新內容:\n{update_info.notes}"
+        )
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        )
+        msg.button(QMessageBox.StandardButton.Ok).setText("前往下載")
+        ret = msg.exec()
+
+        if ret == QMessageBox.StandardButton.Ok:
+            QDesktopServices.openUrl(QUrl(update_info.url))
+
     @Slot(str)
-    def __onUiUpdate(self, text: str) -> None:
+    def __onLableUpdate(self, text: str) -> None:
         self.label.setText(text)
 
-        match self.__main_controller.gameflow:
+    @Slot(Gameflow)
+    def __onChangeGameflow(self, gameflow: Gameflow) -> None:
+        match gameflow:
             case Gameflow.LOBBY:
                 self.match_button.setText("開始列隊")
-                self.match_button.setDisabled(False)
                 self.match_button.show()
 
             case Gameflow.MATCHMAKING:
                 self.match_button.setText("停止列隊")
-                self.match_button.setDisabled(False)
                 self.match_button.show()
 
             case _:
-                self.match_button.setDisabled(True)
                 self.match_button.hide()
 
-    def __onMatchButtonClick(self) -> None:
-        if self.__main_controller.gameflow == Gameflow.LOBBY:
-            self.__main_controller.start_matchmaking()
-        else:
-            self.__main_controller.stop_matchmaking()
+    def __onChangeSetting(self, key: ConfigKeys, value: object) -> None:
+        self.__config.set_config(key, value)
 
-    def __set_always_on_top(self, status: bool) -> None:
-        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, status)
+    def __setAcceptDelay(self, text: str) -> None:
+        try:
+            value = int(text)
+            if value < 0:
+                raise ValueError
+            self.__onChangeSetting(ConfigKeys.ACCEPT_DELAY, value)
+        except ValueError:
+            pass
+
+    def __setAlwaysOnTop(self, value: bool) -> None:
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, value)
         self.show()
-        self.__main_controller.config.set_config(ConfigKeys.ALWAYS_ON_TOP, status)
+        self.__onChangeSetting(ConfigKeys.ALWAYS_ON_TOP, value)
 
-    def __check_update(self, version) -> None:
-        result = check_update(version)
-        if not result.has_update:
-            logger.info("已是最新版本")
-            return
+    def __setAutoAccept(self, value) -> None:
+        self.__onChangeSetting(ConfigKeys.AUTO_ACCEPT, value)
 
-        latest = result.latest
-        url = result.url
-        notes = result.notes or ""
-        logger.info(f"發現新版本: {latest}")
+    def __setAutoRematch(self, value) -> None:
+        self.__onChangeSetting(ConfigKeys.AUTO_REMATCH, value)
 
-        msg = QMessageBox(self)
-        msg.setWindowTitle("有新版本可用")
-        msg.setText(f"檢測到新版本：{latest}\n\n是否前往下載？")
-        msg.setInformativeText(notes)
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        msg.setDefaultButton(QMessageBox.StandardButton.Yes)
+    def __wire_signals(self):
+        # UI物件
+        self.tray.quit_action.triggered.connect(self.exitRequested.emit)
+        self.match_button.clicked.connect(self.matchToggleRequested.emit)
 
-        if msg.exec() == QMessageBox.StandardButton.Yes:
-            QDesktopServices.openUrl(QUrl(url))
+        self.accept_delay_value.textChanged.connect(self.__setAcceptDelay)
 
-    def __exit_app(self) -> None:
-        self.__thread.quit()
-        QApplication.quit()
+        self.always_on_top_status.triggered.connect(self.__setAlwaysOnTop)
+        self.always_on_top_status.setCheckable(True)
+
+        self.auto_accept_status.triggered.connect(self.__setAutoAccept)
+        self.auto_accept_status.setCheckable(True)
+
+        self.auto_rematch_status.triggered.connect(self.__setAutoRematch)
+        self.auto_rematch_status.setCheckable(True)
+
+        # 其他信號
+        self.showUpdateWindow.connect(self.__onShowUpdateWindow)
+        self.lableUpdated.connect(self.__onLableUpdate)
+        self.gameflowChange.connect(self.__onChangeGameflow)
 
     def closeEvent(self, event) -> None:
         event.ignore()
         self.hide()
-
-    def start(self) -> None:
-        self.__init_ui()
-        self.__check_update(self.version)
-        self.show()
-        self.raise_()
-        self.activateWindow()
-
-        self.__thread = QThread()
-        self.__main_controller.moveToThread(self.__thread)
-        self.__thread.started.connect(self.__main_controller.start)
-        self.__thread.start()
