@@ -7,3 +7,4 @@ class ConfigKeys(Enum):
     AUTO_ACCEPT = "auto_accept"
     AUTO_REMATCH = "auto_rematch"
     ACCEPT_DELAY = "accept_delay"
+    AUTO_START_MATCH = "auto_start_match"
