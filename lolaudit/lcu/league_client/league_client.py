@@ -1,5 +1,6 @@
 import logging
 import time
+from pprint import pformat
 from typing import Optional
 
 import urllib3
@@ -49,6 +50,7 @@ class LeagueClient(ClientRequester, ClientWebSocket):
 
     def load_summoner_info(self) -> None:
         me = self.get("/lol-summoner/v1/current-summoner")
+        logger.debug(f"召喚師資訊: {pformat(me)}")
         self.summoner_info = SummonerInfo(**me)
 
     def wait_for_load_summoner_info(self) -> None:
@@ -69,5 +71,5 @@ class LeagueClient(ClientRequester, ClientWebSocket):
             logger.info("應用程式停止,結束獲取召喚師狀態等待")
             return
         logger.info(
-            f"獲取召喚師狀態成功\n  puuid: {self.summoner_info.puuid}\n  gameName: {self.summoner_info.gameName}#{self.summoner_info.tagLine}"
+            f"獲取召喚師狀態成功\n  puuid: {self.summoner_info.puuid}\n  summonerId: {self.summoner_info.summonerId}\n  gameName: {self.summoner_info.gameName}#{self.summoner_info.tagLine}"
         )

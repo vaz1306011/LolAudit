@@ -7,6 +7,7 @@ from lolaudit.exceptions import SummonerInfoError
 
 class SummonerInfo(BaseModel):
     puuid: Optional[str] = None
+    summonerId: Optional[int] = None
     gameName: Optional[str] = None
     tagLine: Optional[str] = None
 

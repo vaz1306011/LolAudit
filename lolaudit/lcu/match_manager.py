@@ -88,9 +88,8 @@ class MatchManager(QObject):
         if self.gameflow != Gameflow.LOBBY or not mchmking_info:
             return
         search_state = mchmking_info.get("searchState")
+        logger.debug(f"搜索狀態: {pformat(mchmking_info)}")
         match search_state:
-            case None | "Searching" | "Found":
-                return
             case "Error":
                 try:
                     if not mchmking_info["errors"]:
@@ -107,6 +106,8 @@ class MatchManager(QObject):
                     self.start_matchmaking()
 
                 self.matchmakingChange.emit(MatchmakingState.PENALTY, ptr)
+            case None | "Searching" | "Found":
+                pass
             case _:
                 raise UnknownSearchStateError(search_state)
 
@@ -131,10 +132,8 @@ class MatchManager(QObject):
                     MatchmakingState.MATCHING,
                     {"timeInQueue": time_in_queue, "estimatedTime": estimated_time},
                 )
-
             case "Found":
                 pass
-
             case _:
                 logger.warning(f"未知的搜索狀態: {pformat(mchmking_info)}")
                 raise UnknownSearchStateError(search_state)
@@ -157,9 +156,6 @@ class MatchManager(QObject):
             case "None", "InProgress":
                 self.__start_ready_check_timer()
 
-            case ("None", "Invalid") | (None, _):
-                pass
-
             case "Accepted", _:
                 self.__stop_ready_check_timer()
                 self.matchmakingChange.emit(MatchmakingState.ACCEPTED, None)
@@ -168,6 +164,9 @@ class MatchManager(QObject):
                 self.__stop_ready_check_timer()
                 self.matchmakingChange.emit(MatchmakingState.DECLINED, None)
 
+            case ("None", "Invalid") | (None, _):
+                pass
+
             case _:
                 self.__stop_ready_check_timer()
                 raise UnknownPlayerResponseError(
@@ -175,16 +174,16 @@ class MatchManager(QObject):
                 )
 
     def __start_ready_check_timer(self) -> None:
-        logger.debug("啟動準備接受對戰計時器")
         if self.__ready_check_timer.isActive():
             return
+        logger.debug("啟動準備接受對戰計時器")
         self.__ready_check_timer.start()
         return
 
     def __stop_ready_check_timer(self) -> None:
-        logger.debug("停止準備接受對戰計時器")
         if not self.__ready_check_timer.isActive():
             return
+        logger.debug("停止準備接受對戰計時器")
         self.__ready_check_timer.stop()
         return
 
