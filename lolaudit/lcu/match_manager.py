@@ -11,12 +11,14 @@ from lolaudit.exceptions import (
     UnknownSearchStateError,
 )
 from lolaudit.models import Gameflow, MatchmakingState
+from lolaudit.models.entities.response.matchmaking_info import MatchmakingInfo
 from lolaudit.models.enums.config_keys import ConfigKeys
 from lolaudit.utils import web_socket
 
 from .league_client import LeagueClient
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class MatchManager(QObject):
@@ -84,18 +86,19 @@ class MatchManager(QObject):
 
     @web_socket.subscribe("/lol-matchmaking/v1/search")
     @Slot(dict)
-    def inLobby(self, mchmking_info: dict) -> None:
-        if self.gameflow != Gameflow.LOBBY or not mchmking_info:
+    def inLobby(self, mchmking_info_dict: dict) -> None:
+        if self.gameflow != Gameflow.LOBBY or not mchmking_info_dict:
             return
-        search_state = mchmking_info.get("searchState")
-        logger.debug(f"搜索狀態: {pformat(mchmking_info)}")
+        mchmking_info = MatchmakingInfo(**mchmking_info_dict)
+        search_state = mchmking_info.searchState
+        logger.debug(f"搜索狀態: {pformat(mchmking_info.model_dump())}")
         match search_state:
             case "Error":
                 try:
-                    if not mchmking_info["errors"]:
+                    if not mchmking_info.errors:
                         ptr = 0
-                    elif mchmking_info["errors"][0]["penaltyTimeRemaining"] > 0:
-                        ptr = mchmking_info["errors"][0]["penaltyTimeRemaining"]
+                    elif mchmking_info.errors[0].penaltyTimeRemaining > 0:
+                        ptr = mchmking_info.errors[0].penaltyTimeRemaining
                     else:
                         raise UnknownMatchmakingInfoError(mchmking_info)
 
@@ -113,14 +116,15 @@ class MatchManager(QObject):
 
     @web_socket.subscribe("/lol-matchmaking/v1/search")
     @Slot(dict)
-    def inMatchmaking(self, mchmking_info: dict) -> None:
-        if self.gameflow != Gameflow.MATCHMAKING or not mchmking_info:
+    def inMatchmaking(self, mchmking_info_dict: dict) -> None:
+        if self.gameflow != Gameflow.MATCHMAKING or not mchmking_info_dict:
             return
-        search_state = mchmking_info.get("searchState")
+        matchmaking_info = MatchmakingInfo(**mchmking_info_dict)
+        search_state = matchmaking_info.searchState
         match search_state:
             case "Searching":
-                time_in_queue = floor(mchmking_info["timeInQueue"])
-                estimated_time = floor(mchmking_info["estimatedQueueTime"])
+                time_in_queue = floor(matchmaking_info.timeInQueue)
+                estimated_time = floor(matchmaking_info.estimatedQueueTime)
                 # estimated_time = 5
 
                 if self.auto_rematch and time_in_queue > estimated_time:
@@ -135,23 +139,27 @@ class MatchManager(QObject):
             case "Found":
                 pass
             case _:
-                logger.warning(f"未知的搜索狀態: {pformat(mchmking_info)}")
+                logger.warning(
+                    f"未知的搜索狀態: {pformat(matchmaking_info.model_dump()) }"
+                )
                 raise UnknownSearchStateError(search_state)
 
     # /lol-lobby/v2/lobby/matchmaking/search-state
     @web_socket.subscribe("/lol-matchmaking/v1/search")
     @Slot(dict)
-    def inReadyCheck(self, mchmking_info: dict) -> None:
+    def inReadyCheck(self, mchmking_info_dict: dict) -> None:
         if self.gameflow != Gameflow.READY_CHECK:
             return
-        if not mchmking_info:
-            mchmking_info = self.get_matchmaking_info()
+        if not mchmking_info_dict:
+            mchmking_info_dict = self.get_matchmaking_info()
 
-        logger.debug(pformat(mchmking_info))
-        ready_check = mchmking_info.get("readyCheck", {})
+        mchmking_info = MatchmakingInfo(**mchmking_info_dict)
 
-        playerResponse = ready_check.get("playerResponse")
-        state = ready_check.get("state")
+        logger.debug(pformat(mchmking_info.model_dump()))
+        ready_check = mchmking_info.readyCheck
+
+        playerResponse = ready_check.playerResponse
+        state = ready_check.state
         match playerResponse, state:
             case "None", "InProgress":
                 self.__start_ready_check_timer()
@@ -178,14 +186,12 @@ class MatchManager(QObject):
             return
         logger.debug("啟動準備接受對戰計時器")
         self.__ready_check_timer.start()
-        return
 
     def __stop_ready_check_timer(self) -> None:
         if not self.__ready_check_timer.isActive():
             return
         logger.debug("停止準備接受對戰計時器")
         self.__ready_check_timer.stop()
-        return
 
     def __onReadyCheckTimerTick(self) -> None:
         ready_check = self.get_matchmaking_info().get("readyCheck", {})
@@ -198,7 +204,6 @@ class MatchManager(QObject):
                 MatchmakingState.WAITING_ACCEPT,
                 {"pass_time": pass_time},
             )
-            return
 
         self.matchmakingChange.emit(
             MatchmakingState.WAITING_ACCEPT,

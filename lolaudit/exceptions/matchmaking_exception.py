@@ -1,13 +1,15 @@
 from pprint import pformat
 from typing import Optional
 
+from lolaudit.models.entities.response.matchmaking_info import MatchmakingInfo
+
 
 class MatchmakingError(Exception):
     pass
 
 
 class UnknownMatchmakingInfoError(MatchmakingError):
-    def __init__(self, matchmaking_info: dict) -> None:
+    def __init__(self, matchmaking_info: MatchmakingInfo) -> None:
         super().__init__(f"未知matchmaking:\n{pformat(matchmaking_info)}")
 
 
