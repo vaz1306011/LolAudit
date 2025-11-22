@@ -1,3 +1,3 @@
-from lolaudit.exceptions.gameflow_exceptions import *
-from lolaudit.exceptions.matchmaking_exception import *
-from lolaudit.exceptions.summoner_exceptions import *
+from .gameflow_exceptions import *
+from .matchmaking_exception import *
+from .summoner_exceptions import *
