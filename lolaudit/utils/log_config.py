@@ -1,6 +1,11 @@
 import logging
 import sys
 import traceback
+from datetime import datetime
+from pathlib import Path
+
+PROJECT_ROOT = "LolAudit"
+PACKAGE_NAME = "lolaudit"
 
 
 class TraceStyleFormatter(logging.Formatter):
@@ -20,12 +25,11 @@ class TraceStyleFormatter(logging.Formatter):
 
     def __filter_stack(self) -> str:
         stack = []
-        project_root = "LolAudit"
         for line in traceback.format_stack():
             stack.append(line)
-            if project_root in line and "logger." not in line:
+            if PROJECT_ROOT in line and "logger." not in line:
                 continue
-            elif project_root not in line:
+            elif PROJECT_ROOT not in line:
                 break
         filtered = [s for s in stack if "logging" not in s]
         return "".join(filtered)
@@ -43,14 +47,19 @@ def setup_logging() -> None:
 
     file_handler = None
     if not getattr(sys, "frozen", False):
-        file_handler = logging.FileHandler("lolaudit0.log", encoding="utf-8")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        log_dir = Path("log")
+        log_dir.mkdir(exist_ok=True)
+        file_handler = logging.FileHandler(
+            log_dir / f"{timestamp}.log", encoding="utf-8"
+        )
         file_handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.WARNING)
     root_logger.addHandler(console_handler)
 
-    logger = logging.getLogger("lolaudit")
+    logger = logging.getLogger(PACKAGE_NAME)
     logger.setLevel(logging.INFO)
     logger.addHandler(console_handler)
     file_handler and logger.addHandler(
