@@ -6,12 +6,13 @@ sys.path.append(os.getcwd())
 from lolaudit import __version__
 
 name = f"LolAudit_{__version__}"
+icon = "./assets/lol_audit.ico"
 
 a = Analysis(  # type: ignore
-    ["lol_audit.pyw"],
+    ["./main.py"],
     pathex=[],
     binaries=[],
-    datas=[("lol_audit.ico", ".")],
+    datas=[(icon, ".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -41,5 +42,5 @@ exe = EXE(  # type: ignore
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=["lol_audit.ico"],
+    icon=icon,
 )
