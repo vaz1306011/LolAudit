@@ -33,7 +33,9 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowTitle(f"LOL Audit {version}")
         icon_path = (
-            "./lol_audit.icns" if platform.system() == "Darwin" else "./lol_audit.ico"
+            "./assets/lol_audit.icns"
+            if platform.system() == "Darwin"
+            else "./assets/lol_audit.ico"
         )
         self.__icon = QIcon(resource_path(icon_path))
         self.setWindowIcon(self.__icon)

@@ -6,12 +6,13 @@ sys.path.append(os.getcwd())
 from lolaudit import __version__
 
 name = f"LolAudit_{__version__}"
+icon = "./assets/lol_audit.icns"
 
 a = Analysis(  # type: ignore
-    ["lol_audit.pyw"],
+    ["./main.py"],
     pathex=[],
     binaries=[],
-    datas=[("lol_audit.icns", ".")],
+    datas=[(icon, ".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -21,6 +22,7 @@ a = Analysis(  # type: ignore
     optimize=0,
 )
 pyz = PYZ(a.pure)  # type: ignore
+
 exe = EXE(  # type: ignore
     pyz,
     a.scripts,
@@ -40,13 +42,13 @@ exe = EXE(  # type: ignore
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon="lol_audit.icns",
+    icon=icon",
 )
 
 app = BUNDLE(  # type: ignore
     exe,
     name=name + ".app",
-    icon="lol_audit.icns",
+    icon=icon,
     bundle_identifier=None,
 )
 
