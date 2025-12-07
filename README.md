@@ -35,8 +35,8 @@
 
 1. 下載專案：
    ```bash
-   git clone https://github.com/vaz1306011/LOL_audit.git
-   cd LOL_audit
+   git clone https://github.com/vaz1306011/LolAudit.git
+   cd LolAudit
    ```
 2. 建立虛擬環境並安裝依賴：
    ```bash
