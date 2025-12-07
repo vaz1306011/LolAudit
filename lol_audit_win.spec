@@ -12,7 +12,7 @@ a = Analysis(  # type: ignore
     ["./main.py"],
     pathex=[],
     binaries=[],
-    datas=[(icon, ".")],
+    datas=[(icon, "./assets/")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
