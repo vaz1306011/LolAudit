@@ -18,6 +18,17 @@
 - **依賴套件**：
   - [PySide6](https://pypi.org/project/PySide6/)
 
+## 使用截圖
+
+  <tr>
+    <td><img alt="" src="./.readme/in-room.png"></td>
+    <td><img alt="" src="./.readme/matching.png"></td>
+  <tr>
+  <tr>
+    <td><img alt="" src="./.readme/champ-select.png"></td>
+  <tr>
+</table>
+
 ## 安裝方式 ⚙️
 
 1. 下載專案：
