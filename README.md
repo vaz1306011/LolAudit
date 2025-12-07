@@ -2,6 +2,8 @@
 
 **《英雄聯盟 (League of Legends)》** 客戶端的輔助工具，提供自動接受對戰、重新列隊與簡易 UI 操作，方便玩家在排位或一般遊戲中減少重複性操作。
 
+## [直接下載](https://api.github.com/repos/vaz1306011/LolAudit/releases/latest)
+
 ## 功能特色 ✨
 
 - **自動接受對戰**：偵測到配對成功後自動點擊接受。
@@ -18,12 +20,23 @@
 - **依賴套件**：
   - [PySide6](https://pypi.org/project/PySide6/)
 
+## 使用截圖
+
+  <tr>
+    <td><img alt="" src="./.readme/in-room.png"></td>
+    <td><img alt="" src="./.readme/matching.png"></td>
+  <tr>
+  <tr>
+    <td><img alt="" src="./.readme/champ-select.png"></td>
+  <tr>
+</table>
+
 ## 安裝方式 ⚙️
 
 1. 下載專案：
    ```bash
-   git clone https://github.com/vaz1306011/LOL_audit.git
-   cd LOL_audit
+   git clone https://github.com/vaz1306011/LolAudit.git
+   cd LolAudit
    ```
 2. 建立虛擬環境並安裝依賴：
    ```bash
