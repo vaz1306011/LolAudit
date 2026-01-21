@@ -164,7 +164,8 @@ class MainController(QObject):
         self.__onGameflowChange(self.__gameflow_manager.get_gameflow())
 
     def __onChampSelectRemainingTimeChange(self, remaining_time: float) -> None:
-        display_text = f"選擇英雄中 - {round(remaining_time)}"
+        display_time = max(0, round(remaining_time))
+        display_text = f"選擇英雄中 - {display_time}"
         self.labelEditRequest.emit(display_text)
 
     def __onChampSelectEnd(self) -> None:
