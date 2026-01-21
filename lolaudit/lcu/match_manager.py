@@ -127,7 +127,11 @@ class MatchManager(QObject):
                 estimated_time = floor(matchmaking_info.estimatedQueueTime)
                 # estimated_time = 5
 
-                if self.auto_rematch and time_in_queue > estimated_time:
+                if (
+                    self.auto_rematch
+                    and time_in_queue > estimated_time
+                    and self.__is_lobby_leader()
+                ):
                     logger.info("等待時間過長，重新列隊")
                     self.stop_matchmaking()
                     self.start_matchmaking()
@@ -213,3 +217,11 @@ class MatchManager(QObject):
         if pass_time >= self.accept_delay:
             logger.debug("自動接受對戰")
             self.accept_match()
+
+    def __is_lobby_leader(self) -> bool:
+        lobby = self.__client.get("/lol-lobby/v2/lobby") or {}
+        local_member = lobby.get("localMember", {})
+        is_leader = local_member.get("isLeader")
+        if is_leader is not None:
+            return bool(is_leader)
+        return False
