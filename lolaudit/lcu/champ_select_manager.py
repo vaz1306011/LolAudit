@@ -77,6 +77,8 @@ class ChampSelectManager(QObject):
                 return
 
     def __try_auto_lock(self, remaining_time: float) -> None:
+        if not bool(self.__config.get_config(ConfigKeys.AUTO_LOCK_CHAMPION)):
+            return
         if remaining_time > self.__auto_lock_threshold:
             return
         session = self.__session or {}
@@ -110,6 +112,8 @@ class ChampSelectManager(QObject):
                 return
 
     def __try_auto_ban(self) -> None:
+        if not bool(self.__config.get_config(ConfigKeys.AUTO_BAN_LAST)):
+            return
         session = self.__session or {}
         timer_phase = session.get("timer", {}).get("phase")
         session_phase = session.get("phase")

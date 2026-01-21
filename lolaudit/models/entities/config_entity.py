@@ -9,3 +9,5 @@ class Config(BaseModel):
     auto_start_match: bool = True
     accept_delay: int = 3
     last_ban_champion_id: int = 0
+    auto_lock_champion: bool = True
+    auto_ban_last: bool = True

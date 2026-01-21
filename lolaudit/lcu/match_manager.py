@@ -18,7 +18,7 @@ from lolaudit.utils import web_socket
 from .league_client import LeagueClient
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 class MatchManager(QObject):
