@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 class MatchManager(QObject):
     matchmakingChange = Signal(MatchmakingState, object)
     __stopReadyCheckTimer = Signal()
-    __default_queue_id = 420
 
     def __init__(self, client: LeagueClient, config: ConfigManager) -> None:
         super().__init__()
@@ -79,7 +78,9 @@ class MatchManager(QObject):
 
     def create_lobby(self, queue_id: int | None = None) -> None:
         url = "/lol-lobby/v2/lobby"
-        self.__client.post(url, {"queueId": queue_id or self.__default_queue_id})
+        if queue_id is None:
+            queue_id = int(self.__config.get_config(ConfigKeys.ONE_KEY_QUEUE_ID))
+        self.__client.post(url, {"queueId": queue_id})
 
     def accept_match(self) -> None:
         url = "/lol-matchmaking/v1/ready-check/accept"

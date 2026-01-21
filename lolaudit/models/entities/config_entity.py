@@ -8,6 +8,7 @@ class Config(BaseModel):
     auto_rematch: bool = True
     auto_start_match: bool = True
     accept_delay: int = 3
+    one_key_queue_id: int = 400
     last_ban_champion_id: int = 0
     auto_lock_champion: bool = True
     auto_ban_last: bool = True
