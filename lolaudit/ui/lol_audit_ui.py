@@ -31,6 +31,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("開始初始化UI")
         self.__config = config
         self.setupUi(self)
+        self.__setup_champ_select_actions()
         self.setWindowTitle(f"LOL Audit {version}")
         icon_path = (
             "./assets/lol_audit.icns"
@@ -71,6 +72,16 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         auto_rematch = bool(self.__config.get_config(ConfigKeys.AUTO_REMATCH))
         self.auto_rematch_status: QAction
         self.auto_rematch_status.setChecked(auto_rematch)
+
+        auto_lock_champion = bool(
+            self.__config.get_config(ConfigKeys.AUTO_LOCK_CHAMPION)
+        )
+        self.auto_lock_status: QAction
+        self.auto_lock_status.setChecked(auto_lock_champion)
+
+        auto_ban_last = bool(self.__config.get_config(ConfigKeys.AUTO_BAN_LAST))
+        self.auto_ban_last_status: QAction
+        self.auto_ban_last_status.setChecked(auto_ban_last)
 
     @Slot(UpdateInfo)
     def __onShowUpdateWindow(self, update_info: UpdateInfo) -> None:
@@ -130,6 +141,23 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
     def __setAutoRematch(self, value) -> None:
         self.__onChangeSetting(ConfigKeys.AUTO_REMATCH, value)
 
+    def __setAutoLock(self, value) -> None:
+        self.__onChangeSetting(ConfigKeys.AUTO_LOCK_CHAMPION, value)
+
+    def __setAutoBanLast(self, value) -> None:
+        self.__onChangeSetting(ConfigKeys.AUTO_BAN_LAST, value)
+
+    def __setup_champ_select_actions(self) -> None:
+        self.auto_lock_status = QAction(self)
+        self.auto_lock_status.setObjectName("auto_lock_status")
+        self.auto_lock_status.setText("自動鎖角")
+        self.menu.addAction(self.auto_lock_status)
+
+        self.auto_ban_last_status = QAction(self)
+        self.auto_ban_last_status.setObjectName("auto_ban_last_status")
+        self.auto_ban_last_status.setText("自動選取禁用英雄")
+        self.menu.addAction(self.auto_ban_last_status)
+
     def __wire_signals(self):
         # UI物件
         self.tray.quit_action.triggered.connect(self.exitRequested.emit)
@@ -145,6 +173,12 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
 
         self.auto_rematch_status.triggered.connect(self.__setAutoRematch)
         self.auto_rematch_status.setCheckable(True)
+
+        self.auto_lock_status.triggered.connect(self.__setAutoLock)
+        self.auto_lock_status.setCheckable(True)
+
+        self.auto_ban_last_status.triggered.connect(self.__setAutoBanLast)
+        self.auto_ban_last_status.setCheckable(True)
 
         # 其他信號
         self.showUpdateWindow.connect(self.__onShowUpdateWindow)
