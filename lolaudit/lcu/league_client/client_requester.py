@@ -41,12 +41,19 @@ class ClientRequester:
             logger.debug(f"get request失敗: {url}")
             return {}
 
-    def post(self, url: str) -> None:
+    def post(self, url: str, data: dict | None = None) -> None:
         try:
             url = f"https://127.0.0.1:{self.port}{url}"
-            self.__session.post(url, timeout=(3, 10))
+            self.__session.post(url, json=data, timeout=(3, 10))
         except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             logger.debug(f"post request失敗: {url}")
+
+    def patch(self, url: str, data: dict | None = None) -> None:
+        try:
+            url = f"https://127.0.0.1:{self.port}{url}"
+            self.__session.patch(url, json=data, timeout=(3, 10))
+        except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
+            logger.debug(f"patch request失敗: {url}")
 
     def delete(self, url: str) -> None:
         try:
