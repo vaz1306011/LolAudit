@@ -8,3 +8,4 @@ class Config(BaseModel):
     auto_rematch: bool = True
     auto_start_match: bool = True
     accept_delay: int = 3
+    last_ban_champion_id: int = 0

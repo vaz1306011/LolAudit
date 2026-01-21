@@ -28,7 +28,7 @@ class MainController(QObject):
         self.__match_manager = MatchManager(self.__client, self._config)
         self.__match_manager.matchmakingChange.connect(self.__onMatchmakingChange)
 
-        self.__champ_select_manager = ChampSelectManager(self.__client)
+        self.__champ_select_manager = ChampSelectManager(self.__client, self._config)
         self.__champ_select_manager.remainingTimeChange.connect(
             self.__onChampSelectRemainingTimeChange
         )

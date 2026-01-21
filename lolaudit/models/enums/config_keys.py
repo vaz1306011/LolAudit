@@ -8,3 +8,4 @@ class ConfigKeys(Enum):
     AUTO_REMATCH = "auto_rematch"
     ACCEPT_DELAY = "accept_delay"
     AUTO_START_MATCH = "auto_start_match"
+    LAST_BAN_CHAMPION_ID = "last_ban_champion_id"
