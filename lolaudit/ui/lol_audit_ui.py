@@ -30,7 +30,6 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("開始初始化UI")
         self.__config = config
         self.setupUi(self)
-        self.__setup_champ_select_actions()
         self.__setup_queue_mode_menu()
         self.setWindowTitle(f"LOL Audit {version}")
         icon_path = (
@@ -162,19 +161,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
             return
         self.__onChangeSetting(ConfigKeys.ONE_KEY_QUEUE_ID, int(queue_id))
 
-    def __setup_champ_select_actions(self) -> None:
-        self.auto_lock_status = QAction(self)
-        self.auto_lock_status.setObjectName("auto_lock_status")
-        self.auto_lock_status.setText("自動鎖角")
-        self.menu.addAction(self.auto_lock_status)
-
-        self.auto_ban_last_status = QAction(self)
-        self.auto_ban_last_status.setObjectName("auto_ban_last_status")
-        self.auto_ban_last_status.setText("自動選取禁用英雄")
-        self.menu.addAction(self.auto_ban_last_status)
-
     def __setup_queue_mode_menu(self) -> None:
-        self.queue_mode_menu = self.menu.addMenu("一鍵列隊模式")
         self.queue_mode_actions = {}
         self.queue_mode_group = QActionGroup(self)
         self.queue_mode_group.setExclusive(True)

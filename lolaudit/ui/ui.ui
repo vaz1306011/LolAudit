@@ -78,33 +78,14 @@ QPushButton:pressed{
      <string>開始列隊</string>
     </property>
    </widget>
-   <widget class="QSlider" name="horizontalSlider">
+   <widget class="QLineEdit" name="accept_delay_value">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>125</x>
       <y>20</y>
-      <width>131</width>
-      <height>22</height>
+      <width>110</width>
+      <height>20</height>
      </rect>
-    </property>
-    <property name="maximum">
-     <number>10</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>20</y>
-      <width>58</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>3</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -137,7 +118,7 @@ QAciotn{
 }
 </string>
    </property>
-   <widget class="QMenu" name="menu">
+   <widget class="QMenu" name="options_menu">
     <property name="styleSheet">
      <string notr="true"/>
     </property>
@@ -145,11 +126,30 @@ QAciotn{
      <string>選項</string>
     </property>
     <addaction name="always_on_top_status"/>
-    <addaction name="separator"/>
-    <addaction name="auto_accept_status"/>
-    <addaction name="auto_rematch_status"/>
    </widget>
-   <addaction name="menu"/>
+   <widget class="QMenu" name="queue_menu">
+    <property name="title">
+     <string>列隊</string>
+    </property>
+    <addaction name="queue_mode_menu"/>
+    <addaction name="auto_rematch_status"/>
+    <addaction name="auto_accept_status"/>
+   </widget>
+   <widget class="QMenu" name="queue_mode_menu">
+    <property name="title">
+     <string>一鍵列隊模式</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="champ_select_menu">
+    <property name="title">
+     <string>英雄選擇</string>
+    </property>
+    <addaction name="auto_ban_last_status"/>
+    <addaction name="auto_lock_status"/>
+   </widget>
+   <addaction name="options_menu"/>
+   <addaction name="queue_menu"/>
+   <addaction name="champ_select_menu"/>
   </widget>
   <action name="auto_accept_status">
    <property name="text">
@@ -164,6 +164,16 @@ QAciotn{
   <action name="always_on_top_status">
    <property name="text">
     <string>視窗至頂</string>
+   </property>
+  </action>
+  <action name="auto_lock_status">
+   <property name="text">
+    <string>自動鎖角</string>
+   </property>
+  </action>
+  <action name="auto_ban_last_status">
+   <property name="text">
+    <string>自動選取禁用英雄</string>
    </property>
   </action>
  </widget>
