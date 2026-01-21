@@ -1,9 +1,8 @@
 import logging
 import platform
-from functools import partial, partialmethod
 
 from PySide6.QtCore import Qt, QUrl, Signal, Slot
-from PySide6.QtGui import QAction, QDesktopServices, QIcon
+from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QIcon
 from PySide6.QtWidgets import QLineEdit, QMainWindow, QMessageBox
 
 from lolaudit.config import ConfigManager
@@ -31,7 +30,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         logger.info("開始初始化UI")
         self.__config = config
         self.setupUi(self)
-        self.__setup_champ_select_actions()
+        self.__setup_queue_mode_menu()
         self.setWindowTitle(f"LOL Audit {version}")
         icon_path = (
             "./assets/lol_audit.icns"
@@ -83,6 +82,11 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.auto_ban_last_status: QAction
         self.auto_ban_last_status.setChecked(auto_ban_last)
 
+        queue_id = int(self.__config.get_config(ConfigKeys.ONE_KEY_QUEUE_ID))
+        action = self.queue_mode_actions.get(queue_id)
+        if action:
+            action.setChecked(True)
+
     @Slot(UpdateInfo)
     def __onShowUpdateWindow(self, update_info: UpdateInfo) -> None:
         msg = QMessageBox(self)
@@ -113,6 +117,10 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
 
             case Gameflow.MATCHMAKING:
                 self.match_button.setText("停止列隊")
+                self.match_button.show()
+
+            case Gameflow.NONE:
+                self.match_button.setText("一鍵列隊")
                 self.match_button.show()
 
             case _:
@@ -147,16 +155,30 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
     def __setAutoBanLast(self, value) -> None:
         self.__onChangeSetting(ConfigKeys.AUTO_BAN_LAST, value)
 
-    def __setup_champ_select_actions(self) -> None:
-        self.auto_lock_status = QAction(self)
-        self.auto_lock_status.setObjectName("auto_lock_status")
-        self.auto_lock_status.setText("自動鎖角")
-        self.menu.addAction(self.auto_lock_status)
+    def __onQueueModeSelected(self, action: QAction) -> None:
+        queue_id = action.data()
+        if queue_id is None:
+            return
+        self.__onChangeSetting(ConfigKeys.ONE_KEY_QUEUE_ID, int(queue_id))
 
-        self.auto_ban_last_status = QAction(self)
-        self.auto_ban_last_status.setObjectName("auto_ban_last_status")
-        self.auto_ban_last_status.setText("自動選取禁用英雄")
-        self.menu.addAction(self.auto_ban_last_status)
+    def __setup_queue_mode_menu(self) -> None:
+        self.queue_mode_actions = {}
+        self.queue_mode_group = QActionGroup(self)
+        self.queue_mode_group.setExclusive(True)
+        self.queue_mode_group.triggered.connect(self.__onQueueModeSelected)
+        modes = [
+            ("競技模式", 400),
+            ("單雙", 420),
+            ("彈性積分", 440),
+            ("隨機單中", 450),
+        ]
+        for label, queue_id in modes:
+            action = QAction(label, self)
+            action.setCheckable(True)
+            action.setData(queue_id)
+            self.queue_mode_group.addAction(action)
+            self.queue_mode_menu.addAction(action)
+            self.queue_mode_actions[queue_id] = action
 
     def __wire_signals(self):
         # UI物件

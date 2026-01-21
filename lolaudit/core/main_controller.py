@@ -2,8 +2,14 @@ import logging
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from lolaudit.lcu import ChampSelectManager, GameflowManager, LeagueClient, MatchManager
-from lolaudit.models import ConfigKeys, Gameflow, MatchmakingState
+from lolaudit.lcu import (
+    ChampSelectManager,
+    GameflowManager,
+    LeagueClient,
+    LobbyManager,
+    MatchManager,
+)
+from lolaudit.models import Gameflow, MatchmakingState
 from lolaudit.utils import web_socket
 
 logger = logging.getLogger(__name__)
@@ -27,6 +33,8 @@ class MainController(QObject):
 
         self.__match_manager = MatchManager(self.__client, self._config)
         self.__match_manager.matchmakingChange.connect(self.__onMatchmakingChange)
+
+        self.__lobby_manager = LobbyManager(self.__client, self.__match_manager)
 
         self.__champ_select_manager = ChampSelectManager(self.__client, self._config)
         self.__champ_select_manager.remainingTimeChange.connect(
@@ -54,15 +62,13 @@ class MainController(QObject):
 
     def stop(self) -> None:
         self.__match_manager.stop()
+        self.__lobby_manager.stop()
         self.__champ_select_manager.stop()
         self.__gameflow_manager.stop()
         self.__client.stop()
 
     def match_toggle(self) -> None:
-        if self.__gameflow == Gameflow.MATCHMAKING:
-            self.__match_manager.stop_matchmaking()
-        else:
-            self.__match_manager.start_matchmaking()
+        self.__lobby_manager.match_toggle(self.__gameflow)
 
     @Slot(Gameflow)
     def __onGameflowChange(self, gameflow: Gameflow) -> None:
@@ -77,6 +83,7 @@ class MainController(QObject):
 
         logger.info(f"Gameflow變更為: {gameflow}")
         self.gameflow = gameflow
+        self.__lobby_manager.set_gameflow(gameflow)
         if self.__client.is_connection():
             match gameflow:
                 case Gameflow.LOBBY | Gameflow.MATCHMAKING:
