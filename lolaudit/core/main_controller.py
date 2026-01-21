@@ -61,8 +61,10 @@ class MainController(QObject):
     def match_toggle(self) -> None:
         if self.__gameflow == Gameflow.MATCHMAKING:
             self.__match_manager.stop_matchmaking()
-        else:
-            self.__match_manager.start_matchmaking()
+            return
+        if self.__gameflow == Gameflow.NONE:
+            self.__match_manager.create_lobby()
+        self.__match_manager.start_matchmaking()
 
     @Slot(Gameflow)
     def __onGameflowChange(self, gameflow: Gameflow) -> None:

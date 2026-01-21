@@ -115,6 +115,10 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
                 self.match_button.setText("停止列隊")
                 self.match_button.show()
 
+            case Gameflow.NONE:
+                self.match_button.setText("一鍵列隊")
+                self.match_button.show()
+
             case _:
                 self.match_button.hide()
 
