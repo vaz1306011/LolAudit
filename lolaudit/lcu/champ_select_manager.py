@@ -91,7 +91,7 @@ class ChampSelectManager(QObject):
         require_in_progress: bool | None = None,
         require_completed: bool | None = None,
     ):
-        local_cell_id = session.get("localPlayerCellId")
+        local_cell_id = self.__get_local_cell_id(session)
         if local_cell_id is None:
             return
         actions = session.get("actions", [])
@@ -113,6 +113,23 @@ class ChampSelectManager(QObject):
                 ):
                     continue
                 yield action
+
+    def __get_local_cell_id(self, session: dict) -> int | None:
+        local_cell_id = session.get("localPlayerCellId")
+        try:
+            summoner_id = self.__client.summoner_info.summonerId
+        except Exception:
+            summoner_id = None
+
+        if summoner_id is None:
+            return local_cell_id
+
+        my_team = session.get("myTeam", [])
+        for member in my_team:
+            if member.get("summonerId") == summoner_id:
+                return member.get("cellId", local_cell_id)
+
+        return local_cell_id
 
     def __update_last_ban(self, session: dict) -> None:
         last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
