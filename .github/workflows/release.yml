@@ -12,19 +12,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5 # 專門給 uv 使用的官方 Action
         with:
-          python-version: "3.x"
+          python-version: "3.10"
+          enable-cache: true
 
       - name: Install dependencies
-        run: |
-          pip install pyinstaller
-          pip install -r requirements.txt # 安裝你專案需要的套件
+        run: uv sync --all-extras
 
       - name: Build EXE with PyInstaller
-        run: |
-          pyinstaller lol_audit_win.spec # 使用你的 spec 檔進行打包 [cite: 1, 2]
+        run: uv run pyinstaller lol_audit_win.spec
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

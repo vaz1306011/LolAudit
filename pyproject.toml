@@ -15,7 +15,10 @@ dependencies = [
     "websocket-client>=1.9.0",
 ]
 
-[dependency-groups]
-dev = [
+[project.optional-dependencies]
+build = [
     "pyinstaller>=6.17.0",
 ]
+
+[dependency-groups]
+dev = []
