@@ -4,7 +4,7 @@
 
 **League of Legends** client helper tool that provides auto match acceptance, auto re-queue, and simple UI operations to reduce repetitive actions in ranked or normal games.
 
-## [Download](https://api.github.com/repos/vaz1306011/LolAudit/releases/latest)
+## [Download](https://github.com/vaz1306011/LolAudit/releases/latest)
 
 ## Features ✨
 
