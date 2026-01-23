@@ -4,7 +4,7 @@
 
 **League of Legends** client helper tool that provides auto match acceptance, auto re-queue, and simple UI operations to reduce repetitive actions in ranked or normal games.
 
-## [Download](https://api.github.com/repos/vaz1306011/LolAudit/releases/latest)
+## [Download](https://github.com/vaz1306011/LolAudit/releases/latest)
 
 ## Features ✨
 
@@ -26,7 +26,7 @@
 ## Screenshots
 
   <tr>
-    <td><img alt="" src="./.readme/in-room.png"></td>
+    <td><img alt="" src="./.readme/one-click-match.png"></td>
     <td><img alt="" src="./.readme/matching.png"></td>
   <tr>
   <tr>
@@ -43,11 +43,11 @@
    ```
 2. Create a virtual environment and install dependencies:
    ```bash
-   pipenv install
+   uv sync
    ```
 3. Run the app:
    ```bash
-   python lol_audit.pyw
+   python main.py
    ```
 
 ## Usage 🖥️

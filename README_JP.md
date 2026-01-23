@@ -4,7 +4,7 @@
 
 **『リーグ・オブ・レジェンド (League of Legends)』** クライアント向けの補助ツールで、自動対戦承諾・自動再キュー・簡易 UI 操作を提供し、ランク戦や通常戦での繰り返し操作を減らします。
 
-## [ダウンロード](https://api.github.com/repos/vaz1306011/LolAudit/releases/latest)
+## [ダウンロード](https://github.com/vaz1306011/LolAudit/releases/latest)
 
 ## 機能 ✨
 
@@ -26,7 +26,7 @@
 ## スクリーンショット
 
   <tr>
-    <td><img alt="" src="./.readme/in-room.png"></td>
+    <td><img alt="" src="./.readme/one-click-match.png"></td>
     <td><img alt="" src="./.readme/matching.png"></td>
   <tr>
   <tr>
@@ -43,11 +43,11 @@
    ```
 2. 仮想環境を作成して依存関係をインストール：
    ```bash
-   pipenv install
+   uv sync
    ```
 3. 実行：
    ```bash
-   python lol_audit.pyw
+   python main.py
    ```
 
 ## 使い方 🖥️

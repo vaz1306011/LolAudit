@@ -4,7 +4,7 @@
 
 **《英雄聯盟 (League of Legends)》** 客戶端的輔助工具，提供自動接受對戰、重新列隊與簡易 UI 操作，方便玩家在排位或一般遊戲中減少重複性操作。
 
-## [直接下載](https://api.github.com/repos/vaz1306011/LolAudit/releases/latest)
+## [直接下載](https://github.com/vaz1306011/LolAudit/releases/latest)
 
 ## 功能特色 ✨
 
@@ -26,7 +26,7 @@
 ## 使用截圖
 
   <tr>
-    <td><img alt="" src="./.readme/in-room.png"></td>
+    <td><img alt="" src="./.readme/one-click-match.png"></td>
     <td><img alt="" src="./.readme/matching.png"></td>
   <tr>
   <tr>
@@ -43,11 +43,11 @@
    ```
 2. 建立虛擬環境並安裝依賴：
    ```bash
-   pipenv install
+   uv sync
    ```
 3. 執行程式：
    ```bash
-   python lol_audit.pyw
+   python main.py
    ```
 
 ## 使用方式 🖥️
