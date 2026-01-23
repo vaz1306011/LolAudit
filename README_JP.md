@@ -26,7 +26,7 @@
 ## スクリーンショット
 
   <tr>
-    <td><img alt="" src="./.readme/in-room.png"></td>
+    <td><img alt="" src="./.readme/one-click-match.png"></td>
     <td><img alt="" src="./.readme/matching.png"></td>
   <tr>
   <tr>
