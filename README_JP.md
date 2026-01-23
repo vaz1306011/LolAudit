@@ -43,11 +43,11 @@
    ```
 2. 仮想環境を作成して依存関係をインストール：
    ```bash
-   pipenv install
+   uv sync
    ```
 3. 実行：
    ```bash
-   python lol_audit.pyw
+   python main.py
    ```
 
 ## 使い方 🖥️

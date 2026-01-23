@@ -43,11 +43,11 @@
    ```
 2. 建立虛擬環境並安裝依賴：
    ```bash
-   pipenv install
+   uv sync
    ```
 3. 執行程式：
    ```bash
-   python lol_audit.pyw
+   python main.py
    ```
 
 ## 使用方式 🖥️

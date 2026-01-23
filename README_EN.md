@@ -43,11 +43,11 @@
    ```
 2. Create a virtual environment and install dependencies:
    ```bash
-   pipenv install
+   uv sync
    ```
 3. Run the app:
    ```bash
-   python lol_audit.pyw
+   python main.py
    ```
 
 ## Usage 🖥️
