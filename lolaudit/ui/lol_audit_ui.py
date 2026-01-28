@@ -1,13 +1,16 @@
 import logging
 import platform
+import shutil
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, Signal, Slot
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QIcon
-from PySide6.QtWidgets import QLineEdit, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QLineEdit, QMainWindow, QMessageBox
 
 from lolaudit.config import ConfigManager
 from lolaudit.models import ConfigKeys, Gameflow, UpdateInfo
 from lolaudit.utils import resource_path
+from lolaudit.utils.log_config import dump_log_buffer, get_current_log_path
 
 from .tray import Tray
 from .ui import Ui_MainWindow
@@ -202,6 +205,8 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.auto_ban_last_status.triggered.connect(self.__setAutoBanLast)
         self.auto_ban_last_status.setCheckable(True)
 
+        self.export_log_action.triggered.connect(self.__export_current_log)
+
         # 其他信號
         self.showUpdateWindow.connect(self.__onShowUpdateWindow)
         self.lableUpdated.connect(self.__onLableUpdate)
@@ -210,3 +215,23 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
     def closeEvent(self, event) -> None:
         event.ignore()
         self.hide()
+
+    def __export_current_log(self) -> None:
+        log_path = get_current_log_path()
+        default_name = log_path.name if log_path else "lol_audit.log"
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "輸出目前log",
+            default_name,
+            "Log Files (*.log);;All Files (*)",
+        )
+        if not save_path:
+            return
+        try:
+            if log_path and log_path.exists():
+                shutil.copyfile(log_path, save_path)
+            else:
+                dump_log_buffer(Path(save_path))
+            QMessageBox.information(self, "輸出完成", f"已輸出到:\n{save_path}")
+        except OSError as exc:
+            QMessageBox.warning(self, "輸出失敗", f"無法輸出log:\n{exc}")

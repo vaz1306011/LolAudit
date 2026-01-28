@@ -122,11 +122,12 @@ QAciotn{
     <property name="styleSheet">
      <string notr="true"/>
     </property>
-    <property name="title">
-     <string>選項</string>
-    </property>
-    <addaction name="always_on_top_status"/>
-   </widget>
+   <property name="title">
+    <string>選項</string>
+   </property>
+   <addaction name="always_on_top_status"/>
+   <addaction name="export_log_action"/>
+  </widget>
    <widget class="QMenu" name="queue_menu">
     <property name="title">
      <string>列隊</string>
@@ -174,6 +175,11 @@ QAciotn{
   <action name="auto_ban_last_status">
    <property name="text">
     <string>自動選取禁用英雄</string>
+   </property>
+  </action>
+  <action name="export_log_action">
+   <property name="text">
+    <string>輸出目前log</string>
    </property>
   </action>
  </widget>
