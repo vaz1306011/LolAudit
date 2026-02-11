@@ -61,5 +61,5 @@ class LolAuditApp:
         lock_file_path = os.path.join(tempfile.gettempdir(), "lol_audit.lock")
         self.__lock_file = QLockFile(lock_file_path)
         if not self.__lock_file.tryLock(100):
-            logger.warning("Another instance is already running.")
+            logger.warning("有另一個 LOL Audit 實例正在運行，正在退出...")
             sys.exit(1)
