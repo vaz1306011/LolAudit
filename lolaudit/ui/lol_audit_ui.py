@@ -1,6 +1,5 @@
 import logging
 import platform
-import shutil
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, Signal, Slot
@@ -10,13 +9,13 @@ from PySide6.QtWidgets import QFileDialog, QLineEdit, QMainWindow, QMessageBox
 from lolaudit.config import ConfigManager
 from lolaudit.models import ConfigKeys, Gameflow, UpdateInfo
 from lolaudit.utils import resource_path
-from lolaudit.utils.log_config import dump_log_buffer, get_current_log_path
+from lolaudit.utils.log_config import dump_log_buffer
 
 from .tray import Tray
 from .ui import Ui_MainWindow
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 class LolAuditUi(QMainWindow, Ui_MainWindow):
@@ -217,8 +216,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.hide()
 
     def __export_current_log(self) -> None:
-        log_path = get_current_log_path()
-        default_name = log_path.name if log_path else "lol_audit.log"
+        default_name = "lol_audit.log"
         save_path, _ = QFileDialog.getSaveFileName(
             self,
             "輸出目前log",
@@ -228,10 +226,15 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         if not save_path:
             return
         try:
-            if log_path and log_path.exists():
-                shutil.copyfile(log_path, save_path)
-            else:
-                dump_log_buffer(Path(save_path))
-            QMessageBox.information(self, "輸出完成", f"已輸出到:\n{save_path}")
+            dump_log_buffer(Path(save_path))
+            self.__show_export_message("輸出完成", f"已輸出到:\n{save_path}")
         except OSError as exc:
-            QMessageBox.warning(self, "輸出失敗", f"無法輸出log:\n{exc}")
+            self.__show_export_message("輸出失敗", f"無法輸出log:\n{exc}")
+
+    def __show_export_message(self, title: str, text: str) -> None:
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.NoIcon)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()

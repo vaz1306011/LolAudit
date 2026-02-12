@@ -1,10 +1,10 @@
 import logging
 import sys
 import traceback
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 from typing import Deque
-from collections import deque
 
 PROJECT_ROOT = "LolAudit"
 PACKAGE_NAME = "lolaudit"
@@ -32,7 +32,7 @@ class TraceStyleFormatter(logging.Formatter):
 
         if record.levelno >= logging.ERROR or record.levelno == logging.DEBUG:
             stack = self.__filter_stack()
-            return f"{header}\n{stack}{message}\n"
+            return f"{header}\n{stack}{self.__add_space(message, 4)}\n"
         else:
             location = f"File: {record.pathname}:{record.lineno}"
             return f"{header}\n{self.__add_space(location, 2)}\n{self.__add_space(message, 4)}\n"
@@ -91,22 +91,8 @@ def setup_logging() -> None:
     web_socket_logger.propagate = False
 
 
-def get_current_log_path() -> Path | None:
-    if CURRENT_LOG_PATH and CURRENT_LOG_PATH.exists():
-        return CURRENT_LOG_PATH
-    log_dir = Path("log")
-    if not log_dir.exists():
-        return None
-    log_files = sorted(
-        log_dir.glob("*.log"),
-        key=lambda p: p.stat().st_mtime,
-        reverse=True,
-    )
-    return log_files[0] if log_files else None
-
-
 def dump_log_buffer(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for line in LOG_BUFFER:
-            f.write(line)
+            f.write(line + "\n")
