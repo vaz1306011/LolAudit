@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from . import LeagueClient
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 class ChampSelectManager(QObject):
@@ -84,6 +84,87 @@ class ChampSelectManager(QObject):
         self.__try_auto_lock(remaining_time)
         self.__try_auto_ban()
 
+    def __try_auto_ban(self) -> None:
+        if not bool(self.__config.get_config(ConfigKeys.AUTO_BAN_LAST)):
+            return
+        session = self.__session or {}
+        timer_phase = session.get("timer", {}).get("phase")
+        session_phase = session.get("phase")
+        if timer_phase != "BAN_PICK" and session_phase != "BAN_PICK":
+            return
+        last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
+        if not last_ban_champion_id:
+            return
+        for action in self.__iter_local_actions(
+            session,
+            "ban",
+            require_in_progress=True,
+            require_completed=False,
+        ):
+            if (action.get("championId") or 0) > 0:
+                return
+            action_id = action.get("id")
+            if action_id is None or action_id in self.__auto_banned_action_ids:
+                return
+            logger.info("選取禁用英雄")
+            url = f"/lol-champ-select/v1/session/actions/{action_id}"
+            self.__client.patch(url, {"championId": last_ban_champion_id})
+            self.__auto_banned_action_ids.add(action_id)
+            return
+
+    def __update_last_ban(self, session: dict) -> None:
+        last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
+
+        def is_ten_bans_reveal_isInProgress(session: dict) -> bool:
+            actions = session.get("actions", {})
+            for action_group in actions:
+                for action in action_group:
+                    if action.get("type") == "ten_bans_reveal":
+                        return bool(action.get("isInProgress", False))
+            return False
+
+        if not is_ten_bans_reveal_isInProgress(session):
+            return
+
+        for action in self.__iter_local_actions(
+            session,
+            "ban",
+            require_completed=True,
+        ):
+            champion_id = action.get("championId") or 0
+            if champion_id <= 0 or champion_id == last_ban_champion_id:
+                continue
+            self.__config.set_config(ConfigKeys.LAST_BAN_CHAMPION_ID, champion_id)
+            logger.info(f"更新禁用英雄為 {champion_id}")
+            return
+
+    def __try_auto_lock(self, remaining_time: float) -> None:
+        if not bool(self.__config.get_config(ConfigKeys.AUTO_LOCK_CHAMPION)):
+            return
+        if remaining_time > self.__auto_lock_threshold:
+            return
+        session = self.__session or {}
+        for action in self.__iter_local_actions(
+            session,
+            "pick",
+            require_in_progress=True,
+            require_completed=False,
+        ):
+            action_id = action.get("id")
+            if action_id is None or action_id in self.__auto_locked_action_ids:
+                return
+            champion_id = action.get("championId") or 0
+            if champion_id <= 0:
+                return
+            logger.info("選角時間到，自動鎖角")
+            url = f"/lol-champ-select/v1/session/actions/{action_id}"
+            self.__client.patch(
+                url,
+                {"championId": champion_id, "completed": True},
+            )
+            self.__auto_locked_action_ids.add(action_id)
+            return
+
     def __iter_local_actions(
         self,
         session: dict,
@@ -92,6 +173,13 @@ class ChampSelectManager(QObject):
         require_completed: bool | None = None,
     ):
         local_cell_id = self.__get_local_cell_id(session)
+        self.pre_local_cell_id = getattr(self, "pre_local_cell_id", None)
+        if self.pre_local_cell_id != local_cell_id:
+            logger.debug(
+                f"本地玩家 cellId 已從 {self.pre_local_cell_id} 更新為 {local_cell_id}"
+            )
+            self.pre_local_cell_id = local_cell_id
+
         if local_cell_id is None:
             return
         actions = session.get("actions", [])
@@ -130,71 +218,3 @@ class ChampSelectManager(QObject):
                 return member.get("cellId", local_cell_id)
 
         return local_cell_id
-
-    def __update_last_ban(self, session: dict) -> None:
-        last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
-        for action in self.__iter_local_actions(
-            session,
-            "ban",
-            require_completed=True,
-        ):
-            champion_id = action.get("championId") or 0
-            if champion_id <= 0 or champion_id == last_ban_champion_id:
-                continue
-            self.__config.set_config(ConfigKeys.LAST_BAN_CHAMPION_ID, champion_id)
-            return
-
-    def __try_auto_lock(self, remaining_time: float) -> None:
-        if not bool(self.__config.get_config(ConfigKeys.AUTO_LOCK_CHAMPION)):
-            return
-        if remaining_time > self.__auto_lock_threshold:
-            return
-        session = self.__session or {}
-        for action in self.__iter_local_actions(
-            session,
-            "pick",
-            require_in_progress=True,
-            require_completed=False,
-        ):
-            action_id = action.get("id")
-            if action_id is None or action_id in self.__auto_locked_action_ids:
-                return
-            champion_id = action.get("championId") or 0
-            if champion_id <= 0:
-                return
-            logger.info("選角時間到，自動鎖角")
-            url = f"/lol-champ-select/v1/session/actions/{action_id}"
-            self.__client.patch(
-                url,
-                {"championId": champion_id, "completed": True},
-            )
-            self.__auto_locked_action_ids.add(action_id)
-            return
-
-    def __try_auto_ban(self) -> None:
-        if not bool(self.__config.get_config(ConfigKeys.AUTO_BAN_LAST)):
-            return
-        session = self.__session or {}
-        timer_phase = session.get("timer", {}).get("phase")
-        session_phase = session.get("phase")
-        if timer_phase != "BAN_PICK" and session_phase != "BAN_PICK":
-            return
-        last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
-        if not last_ban_champion_id:
-            return
-        for action in self.__iter_local_actions(
-            session,
-            "ban",
-            require_in_progress=True,
-            require_completed=False,
-        ):
-            if (action.get("championId") or 0) > 0:
-                return
-            action_id = action.get("id")
-            if action_id is None or action_id in self.__auto_banned_action_ids:
-                return
-            logger.info("選取禁用英雄")
-            url = f"/lol-champ-select/v1/session/actions/{action_id}"
-            self.__client.patch(url, {"championId": last_ban_champion_id})
-            self.__auto_banned_action_ids.add(action_id)
-            return
