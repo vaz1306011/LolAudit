@@ -42,7 +42,7 @@ exe = EXE(  # type: ignore
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=icon",
+    icon=icon,
 )
 
 app = BUNDLE(  # type: ignore
