@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class GameflowManager(QObject):
-
     gameflowChange = Signal(Gameflow)
 
     def __init__(self, client: "LeagueClient") -> None:
