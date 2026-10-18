@@ -51,7 +51,8 @@ class ClientRequester:
     def patch(self, url: str, data: dict | None = None) -> None:
         try:
             url = f"https://127.0.0.1:{self.port}{url}"
-            self.__session.patch(url, json=data, timeout=(3, 10))
+            response = self.__session.patch(url, json=data, timeout=(3, 10))
+            logger.info(f"patch {url} {data} -> {response.status_code} {response.text}")
         except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             logger.debug(f"patch request失敗: {url}")
 

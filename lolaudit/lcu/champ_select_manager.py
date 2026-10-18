@@ -30,6 +30,7 @@ class ChampSelectManager(QObject):
         self.__timer = None
         self.__auto_locked_action_ids: set[int] = set()
         self.__auto_banned_action_ids: set[int] = set()
+        self.__last_ban_recorded = False
 
     def start(self) -> None:
         logger.debug("開始選角監聽")
@@ -51,12 +52,15 @@ class ChampSelectManager(QObject):
         return actions
 
     def stop(self) -> None:
+        if self.__timer is None:
+            return
         logger.debug("結束選角監聽")
         url = "/lol-champ-select/v1/session"
         self.__client.unsubscribe(url)
         self.__timer = None
         self.__auto_locked_action_ids.clear()
         self.__auto_banned_action_ids.clear()
+        self.__last_ban_recorded = False
         self.champSelectFinish.emit()
 
     def __get_champ_select_session(self) -> dict:
@@ -106,36 +110,30 @@ class ChampSelectManager(QObject):
             action_id = action.get("id")
             if action_id is None or action_id in self.__auto_banned_action_ids:
                 return
-            logger.info("選取禁用英雄")
+            logger.info(f"選取禁用英雄 {last_ban_champion_id} (action {action_id})")
             url = f"/lol-champ-select/v1/session/actions/{action_id}"
             self.__client.patch(url, {"championId": last_ban_champion_id})
             self.__auto_banned_action_ids.add(action_id)
             return
 
     def __update_last_ban(self, session: dict) -> None:
-        last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
-
-        def is_ten_bans_reveal_isInProgress(session: dict) -> bool:
-            actions = session.get("actions", {})
-            for action_group in actions:
-                for action in action_group:
-                    if action.get("type") == "ten_bans_reveal":
-                        return bool(action.get("isInProgress", False))
-            return False
-
-        if not is_ten_bans_reveal_isInProgress(session):
+        # 只在自己的 ban 剛鎖定時記錄一次，之後換位子 cellId 變動也不會被覆蓋
+        if self.__last_ban_recorded:
             return
-
         for action in self.__iter_local_actions(
             session,
             "ban",
             require_completed=True,
         ):
             champion_id = action.get("championId") or 0
-            if champion_id <= 0 or champion_id == last_ban_champion_id:
+            if champion_id <= 0:
                 continue
-            self.__config.set_config(ConfigKeys.LAST_BAN_CHAMPION_ID, champion_id)
-            logger.info(f"更新禁用英雄為 {champion_id}")
+            self.__last_ban_recorded = True
+            if champion_id != self.__config.get_config(
+                ConfigKeys.LAST_BAN_CHAMPION_ID
+            ):
+                self.__config.set_config(ConfigKeys.LAST_BAN_CHAMPION_ID, champion_id)
+                logger.info(f"更新禁用英雄為 {champion_id}")
             return
 
     def __try_auto_lock(self, remaining_time: float) -> None:

@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 
 [[package]]
@@ -138,7 +138,7 @@ wheels = [
 
 [[package]]
 name = "lolaudit"
-version = "0.1.0"
+version = "1.7.4"
 source = { virtual = "." }
 dependencies = [
     { name = "appdirs" },
