@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 class ChampSelectManager(QObject):
     remainingTimeChange = Signal(int)
     champSelectFinish = Signal()
-    __auto_lock_threshold = -2
+    __auto_lock_threshold = -1.75
 
     def __init__(self, client: "LeagueClient", config: "ConfigManager") -> None:
         super().__init__()
