@@ -10,6 +10,10 @@ GITHUB_REPO = "vaz1306011/LOL_audit"
 
 
 def check_update(current_version: str) -> UpdateInfo:
+    if current_version == "dev" or "-" in current_version:
+        logger.info(f"開發版本 {current_version}，略過更新檢查")
+        return UpdateInfo()
+
     url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
     try:
         r = requests.get(url, timeout=3)
