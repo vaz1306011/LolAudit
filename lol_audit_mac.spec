@@ -1,11 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import subprocess
 import sys
 
 sys.path.append(os.getcwd())
-from lolaudit import __version__
 
-name = f"LolAudit_{__version__}"
+try:
+    describe = subprocess.check_output(["git", "describe", "--tags", "--always", "--dirty"], text=True).strip()
+    with open("lolaudit/_build.py", "w", encoding="utf-8") as f:
+        f.write(f'__version__ = "{describe}"\n')
+except Exception as e:
+    print(f"Warning: could not get git describe: {e}")
+
+name = "LolAudit"
 icon = "./assets/lol_audit.icns"
 
 a = Analysis(  # type: ignore

@@ -1,3 +1,6 @@
 from .utils import setup_logging
 
-__version__ = "v1.7.4"
+try:
+    from ._build import __version__
+except ImportError:
+    __version__ = "dev"
