@@ -39,7 +39,7 @@ class ChampSelectManager(QObject):
         self.__session = self.__get_champ_select_session()
 
         self.__timer = QTimer()
-        self.__timer.setInterval(250)
+        self.__timer.setInterval(50)
         self.__timer.timeout.connect(self.__onTimerTimeout)
         self.__timer.start()
 
