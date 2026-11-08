@@ -41,7 +41,7 @@ class ConfigManager(QObject):
         else:
             raise AttributeError(f"Setting has no attribute '{key}'")
 
-    def get_config(self, key: ConfigKeys) -> bool | int:
+    def get_config(self, key: ConfigKeys) -> bool | int | dict:
         if hasattr(self.setting, key.value):
             return getattr(self.setting, key.value)
         else:
