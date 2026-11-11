@@ -212,10 +212,16 @@ class ChampSelectManager(QObject):
                 yield action
 
     def __get_position(self, session: dict) -> str | None:
-        """以 cellId 換算隊內位置 (0~4)，作為記錄 ban 角的 key"""
+        """記錄 ban 角用的 key：優先用分配到的路線，沒有路線(如一般選角)則用隊內順位"""
         local_cell_id = self.__get_local_cell_id(session)
         if local_cell_id is None:
             return None
+        for member in session.get("myTeam", []):
+            if member.get("cellId") == local_cell_id:
+                assigned = member.get("assignedPosition")
+                if assigned:
+                    return str(assigned)
+                break
         return str(local_cell_id % 5)
 
     def __get_local_cell_id(self, session: dict) -> int | None:
