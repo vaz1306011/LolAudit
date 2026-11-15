@@ -78,19 +78,6 @@ QPushButton:pressed{
      <string>開始列隊</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="accept_delay_value">
-    <property name="geometry">
-     <rect>
-      <x>125</x>
-      <y>20</y>
-      <width>110</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -135,6 +122,7 @@ QAciotn{
     <addaction name="queue_mode_menu"/>
     <addaction name="auto_rematch_status"/>
     <addaction name="auto_accept_status"/>
+    <addaction name="accept_delay_action"/>
    </widget>
    <widget class="QMenu" name="queue_mode_menu">
     <property name="title">
@@ -155,6 +143,11 @@ QAciotn{
   <action name="auto_accept_status">
    <property name="text">
     <string>自動接受</string>
+   </property>
+  </action>
+  <action name="accept_delay_action">
+   <property name="text">
+    <string>對戰接受延遲</string>
    </property>
   </action>
   <action name="auto_rematch_status">
