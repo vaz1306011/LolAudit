@@ -53,6 +53,8 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
             | Qt.WindowType.WindowCloseButtonHint
         )
         self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
+        # 移除 Windows 的縮放邊框,避免視窗不在前景時邊緣仍出現縮放游標
+        self.setWindowFlag(Qt.WindowType.MSWindowsFixedSizeDialogHint, True)
 
         self.tray = Tray(self, self.__icon)
 
