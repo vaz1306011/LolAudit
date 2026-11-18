@@ -96,7 +96,13 @@ class ChampSelectManager(QObject):
         session_phase = session.get("phase")
         if timer_phase != "BAN_PICK" and session_phase != "BAN_PICK":
             return
-        last_ban_champion_id = self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_ID)
+        position = self.__get_position(session)
+        if position is None:
+            return
+        last_ban_champion_ids = self.__config.get_config(
+            ConfigKeys.LAST_BAN_CHAMPION_IDS
+        )
+        last_ban_champion_id = last_ban_champion_ids.get(position)
         if not last_ban_champion_id:
             return
         for action in self.__iter_local_actions(
@@ -110,7 +116,9 @@ class ChampSelectManager(QObject):
             action_id = action.get("id")
             if action_id is None or action_id in self.__auto_banned_action_ids:
                 return
-            logger.info(f"選取禁用英雄 {last_ban_champion_id} (action {action_id})")
+            logger.info(
+                f"選取位置 {position} 的禁用英雄 {last_ban_champion_id} (action {action_id})"
+            )
             url = f"/lol-champ-select/v1/session/actions/{action_id}"
             self.__client.patch(url, {"championId": last_ban_champion_id})
             self.__auto_banned_action_ids.add(action_id)
@@ -128,12 +136,15 @@ class ChampSelectManager(QObject):
             champion_id = action.get("championId") or 0
             if champion_id <= 0:
                 continue
+            position = self.__get_position(session)
+            if position is None:
+                return
             self.__last_ban_recorded = True
-            if champion_id != self.__config.get_config(
-                ConfigKeys.LAST_BAN_CHAMPION_ID
-            ):
-                self.__config.set_config(ConfigKeys.LAST_BAN_CHAMPION_ID, champion_id)
-                logger.info(f"更新禁用英雄為 {champion_id}")
+            records = dict(self.__config.get_config(ConfigKeys.LAST_BAN_CHAMPION_IDS))
+            if records.get(position) != champion_id:
+                records[position] = champion_id
+                self.__config.set_config(ConfigKeys.LAST_BAN_CHAMPION_IDS, records)
+                logger.info(f"更新位置 {position} 的禁用英雄為 {champion_id}")
             return
 
     def __try_auto_lock(self, remaining_time: float) -> None:
@@ -199,6 +210,19 @@ class ChampSelectManager(QObject):
                 ):
                     continue
                 yield action
+
+    def __get_position(self, session: dict) -> str | None:
+        """記錄 ban 角用的 key：優先用分配到的路線，沒有路線(如一般選角)則用隊內順位"""
+        local_cell_id = self.__get_local_cell_id(session)
+        if local_cell_id is None:
+            return None
+        for member in session.get("myTeam", []):
+            if member.get("cellId") == local_cell_id:
+                assigned = member.get("assignedPosition")
+                if assigned:
+                    return str(assigned)
+                break
+        return str(local_cell_id % 5)
 
     def __get_local_cell_id(self, session: dict) -> int | None:
         local_cell_id = session.get("localPlayerCellId")
