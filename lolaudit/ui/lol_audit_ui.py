@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, Signal, Slot
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QIcon
-from PySide6.QtWidgets import QFileDialog, QLineEdit, QMainWindow, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMainWindow, QMessageBox
 
 from lolaudit.config import ConfigManager
 from lolaudit.models import ConfigKeys, Gameflow, UpdateInfo
@@ -57,10 +57,6 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.read_config()
 
     def read_config(self) -> None:
-        self.accept_delay_value: QLineEdit
-        self.accept_delay_value.setText(
-            str(self.__config.get_config(ConfigKeys.ACCEPT_DELAY))
-        )
         always_on_top = bool(self.__config.get_config(ConfigKeys.ALWAYS_ON_TOP))
         self.always_on_top_status: QAction
         self.always_on_top_status.setChecked(always_on_top)
@@ -131,14 +127,13 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
     def __onChangeSetting(self, key: ConfigKeys, value: object) -> None:
         self.__config.set_config(key, value)
 
-    def __setAcceptDelay(self, text: str) -> None:
-        try:
-            value = int(text)
-            if value < 0:
-                raise ValueError
+    def __showAcceptDelayDialog(self) -> None:
+        current = int(self.__config.get_config(ConfigKeys.ACCEPT_DELAY))
+        value, ok = QInputDialog.getInt(
+            self, "對戰接受延遲", "延遲秒數:", current, 0, 999
+        )
+        if ok:
             self.__onChangeSetting(ConfigKeys.ACCEPT_DELAY, value)
-        except ValueError:
-            pass
 
     def __setAlwaysOnTop(self, value: bool) -> None:
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, value)
@@ -187,7 +182,7 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.tray.quit_action.triggered.connect(self.exitRequested.emit)
         self.match_button.clicked.connect(self.matchToggleRequested.emit)
 
-        self.accept_delay_value.textChanged.connect(self.__setAcceptDelay)
+        self.accept_delay_action.triggered.connect(self.__showAcceptDelayDialog)
 
         self.always_on_top_status.triggered.connect(self.__setAlwaysOnTop)
         self.always_on_top_status.setCheckable(True)

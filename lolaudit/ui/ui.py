@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,9 +16,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QLabel, QLineEdit, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QSizePolicy,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -48,6 +47,8 @@ class Ui_MainWindow(object):
 "}")
         self.auto_accept_status = QAction(MainWindow)
         self.auto_accept_status.setObjectName(u"auto_accept_status")
+        self.accept_delay_action = QAction(MainWindow)
+        self.accept_delay_action.setObjectName(u"accept_delay_action")
         self.auto_rematch_status = QAction(MainWindow)
         self.auto_rematch_status.setObjectName(u"auto_rematch_status")
         self.always_on_top_status = QAction(MainWindow)
@@ -76,10 +77,6 @@ class Ui_MainWindow(object):
         font1.setFamilies([u"Arial"])
         font1.setPointSize(12)
         self.match_button.setFont(font1)
-        self.accept_delay_value = QLineEdit(self.centralwidget)
-        self.accept_delay_value.setObjectName(u"accept_delay_value")
-        self.accept_delay_value.setGeometry(QRect(125, 20, 110, 20))
-        self.accept_delay_value.setAlignment(Qt.AlignCenter)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
@@ -118,6 +115,7 @@ class Ui_MainWindow(object):
         self.queue_menu.addAction(self.queue_mode_menu.menuAction())
         self.queue_menu.addAction(self.auto_rematch_status)
         self.queue_menu.addAction(self.auto_accept_status)
+        self.queue_menu.addAction(self.accept_delay_action)
         self.champ_select_menu.addAction(self.auto_ban_last_status)
         self.champ_select_menu.addAction(self.auto_lock_status)
 
@@ -128,6 +126,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         self.auto_accept_status.setText(QCoreApplication.translate("MainWindow", u"\u81ea\u52d5\u63a5\u53d7", None))
+        self.accept_delay_action.setText(QCoreApplication.translate("MainWindow", u"\u5c0d\u6230\u63a5\u53d7\u5ef6\u9072", None))
         self.auto_rematch_status.setText(QCoreApplication.translate("MainWindow", u"\u8d85\u6642\u91cd\u6392", None))
         self.always_on_top_status.setText(QCoreApplication.translate("MainWindow", u"\u8996\u7a97\u81f3\u9802", None))
         self.auto_lock_status.setText(QCoreApplication.translate("MainWindow", u"\u81ea\u52d5\u9396\u89d2", None))
