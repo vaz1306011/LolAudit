@@ -43,6 +43,16 @@ class LolAuditUi(QMainWindow, Ui_MainWindow):
         self.setWindowIcon(self.__icon)
         self.setFixedSize(self.size())
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
+        # 視窗大小固定,移除最大化按鈕(CustomizeWindowHint 下需明確列出要保留的按鈕)
+        self.setWindowFlags(
+            self.windowFlags()
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowSystemMenuHint
+            | Qt.WindowType.WindowMinimizeButtonHint
+            | Qt.WindowType.WindowCloseButtonHint
+        )
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
 
         self.tray = Tray(self, self.__icon)
 
